@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1010" viewBox="0 0 1280 1010" role="img" aria-labelledby="title description">
+  <title id="title">ERD Antrian Pasien</title>
+  <desc id="description">Diagram tabel users, queue_entries, push_subscriptions, settings, dan doctor_achievements berdasarkan migrasi Laravel.</desc>
+  <defs>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #17324d; }
+      .title { font-size: 30px; font-weight: 700; }
+      .subtitle { font-size: 15px; fill: #52677d; }
+      .table-title { font-size: 18px; font-weight: 700; fill: #ffffff; }
+      .field { font-size: 14px; }
+      .muted { fill: #60758a; }
+      .card { fill: #ffffff; stroke: #b7c8d8; stroke-width: 1.5; }
+      .head { fill: #176b87; }
+      .key { font-weight: 700; fill: #115c74; }
+      .relation { fill: none; stroke: #287c91; stroke-width: 2.5; }
+      .logical { fill: none; stroke: #a56a13; stroke-width: 2.5; stroke-dasharray: 8 7; }
+      .note { font-size: 14px; fill: #68460f; }
+      .note-box { fill: #fff5dc; stroke: #e4bf70; stroke-width: 1.2; }
+      .legend { font-size: 13px; fill: #52677d; }
+    </style>
+  </defs>
+
+  <rect width="1280" height="1010" fill="#f3f8fb"/>
+  <text x="640" y="52" text-anchor="middle" class="title">ERD — Antrian Pasien</text>
+  <text x="640" y="80" text-anchor="middle" class="subtitle">Skema domain aplikasi berdasarkan migration Laravel</text>
+
+  <path class="logical" d="M 610 300 H 550 V 700 H 610"/>
+
+  <g transform="translate(70 130)">
+    <rect class="card" width="380" height="305" rx="10"/>
+    <path class="head" d="M 10 0 H 370 Q 380 0 380 10 V 48 H 0 V 10 Q 0 0 10 0 Z"/>
+    <text x="20" y="31" class="table-title">users</text>
+    <text x="20" y="78" class="field key">PK  id</text>
+    <text x="20" y="105" class="field">name</text>
+    <text x="20" y="132" class="field">username (unik, nullable)</text>
+    <text x="20" y="159" class="field">email (unik, nullable setelah migrasi)</text>
+    <text x="20" y="186" class="field">password</text>
+    <text x="20" y="213" class="field">role (petugas / admin)</text>
+    <text x="20" y="240" class="field">is_active</text>
+    <text x="20" y="267" class="field muted">email_verified_at, remember_token, timestamps</text>
+    <text x="20" y="290" class="legend">Akun petugas dan admin</text>
+  </g>
+
+  <g transform="translate(610 120)">
+    <rect class="card" width="590" height="480" rx="10"/>
+    <path class="head" d="M 10 0 H 580 Q 590 0 590 10 V 48 H 0 V 10 Q 0 0 10 0 Z"/>
+    <text x="20" y="31" class="table-title">queue_entries</text>
+    <text x="20" y="78" class="field key">PK  id</text>
+    <text x="20" y="105" class="field">queue_date</text>
+    <text x="20" y="132" class="field">number (unik bersama queue_date)</text>
+    <text x="20" y="159" class="field">position</text>
+    <text x="20" y="186" class="field">device_hash (SHA-256 token perangkat)</text>
+    <text x="20" y="213" class="field">patient_name, patient_age</text>
+    <text x="20" y="240" class="field">patient_address, complaint</text>
+    <text x="20" y="267" class="field">status</text>
+    <text x="20" y="294" class="field">call_count, last_called_at, called_at</text>
+    <text x="20" y="321" class="field">finished_at, notified_near</text>
+    <text x="20" y="348" class="field muted">timestamps</text>
+    <line x1="20" y1="372" x2="570" y2="372" stroke="#d7e2eb"/>
+    <text x="20" y="401" class="legend">Antrian harian serta data pemeriksaan pasien</text>
+    <text x="20" y="427" class="legend">Indeks: (queue_date, status, position)</text>
+    <text x="20" y="453" class="legend">Nomor antrian berulang tiap hari (01–99)</text>
+  </g>
+
+  <g transform="translate(70 510)">
+    <rect class="card" width="380" height="205" rx="10"/>
+    <path class="head" d="M 10 0 H 370 Q 380 0 380 10 V 48 H 0 V 10 Q 0 0 10 0 Z"/>
+    <text x="20" y="31" class="table-title">settings</text>
+    <text x="20" y="83" class="field key">PK  key</text>
+    <text x="20" y="113" class="field">value</text>
+    <text x="20" y="143" class="field muted">timestamps</text>
+    <text x="20" y="177" class="legend">Pengaturan aplikasi dan praktek</text>
+  </g>
+
+  <g transform="translate(610 650)">
+    <rect class="card" width="590" height="235" rx="10"/>
+    <path class="head" d="M 10 0 H 580 Q 590 0 590 10 V 48 H 0 V 10 Q 0 0 10 0 Z"/>
+    <text x="20" y="31" class="table-title">push_subscriptions</text>
+    <text x="20" y="82" class="field key">PK  id</text>
+    <text x="20" y="110" class="field">device_hash</text>
+    <text x="20" y="138" class="field">endpoint</text>
+    <text x="20" y="166" class="field">endpoint_hash (unik)</text>
+    <text x="20" y="194" class="field">p256dh, auth, timestamps</text>
+    <text x="20" y="222" class="legend">Kredensial Web Push untuk perangkat pendamping</text>
+  </g>
+
+  <g transform="translate(70 775)">
+    <rect class="card" width="380" height="170" rx="10"/>
+    <path class="head" d="M 10 0 H 370 Q 380 0 380 10 V 48 H 0 V 10 Q 0 0 10 0 Z"/>
+    <text x="20" y="31" class="table-title">doctor_achievements</text>
+    <text x="20" y="82" class="field key">PK  id</text>
+    <text x="20" y="110" class="field">title, description, image_path</text>
+    <text x="20" y="138" class="field">sort_order, timestamps</text>
+  </g>
+
+  <rect class="note-box" x="610" y="915" width="590" height="64" rx="8"/>
+  <text x="630" y="941" class="note">Garis putus-putus: relasi logis melalui device_hash.</text>
+  <text x="630" y="963" class="note">Tidak ada foreign key antara queue_entries dan push_subscriptions.</text>
+  <text x="70" y="978" class="legend">PK = primary key · Pengguna dan pengaturan tidak memiliki relasi foreign key ke tabel domain lain.</text>
+</svg>
