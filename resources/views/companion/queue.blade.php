@@ -7,8 +7,8 @@
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-title" content="{{ $appName ?? 'Antrian Pasien' }}">
         <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
-        <link rel="icon" href="{{ asset('icons/antrian.svg') }}" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="{{ asset('icons/antrian-192.png') }}">
+        <link rel="icon" href="{{ asset('icons/antrian-512.png?v=' . filemtime(public_path('icons/antrian-512.png'))) }}" type="image/png">
+        <link rel="apple-touch-icon" href="{{ asset('icons/antrian-512.png?v=' . filemtime(public_path('icons/antrian-512.png'))) }}">
         <title>Status Antrian | {{ $appName ?? 'Antrian Pasien' }}</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800,900&display=swap" rel="stylesheet">
@@ -26,11 +26,7 @@
                     <div class="flex justify-between h-16">
                         <div class="flex items-center gap-3">
                             <a href="{{ route('landing') }}" class="flex items-center gap-2.5">
-                                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-700 text-white shadow-sm">
-                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                    </svg>
-                                </div>
+                                <img src="{{ asset('icons/antrian-512.png?v=' . filemtime(public_path('icons/antrian-512.png'))) }}" alt="Logo" class="h-10 w-10 rounded-full object-cover border border-gray-200 shadow-sm">
                                 <span class="font-bold text-lg text-gray-900 tracking-tight">
                                     {{ $appName ?? 'Antrian Pasien' }}
                                 </span>
@@ -154,7 +150,7 @@
                                         </svg>
                                     </div>
                                 </div>
-                                <p id="my-number" class="mt-3 text-4xl font-black text-blue-700">--</p>
+                                <p id="my-number" class="mt-3 text-2xl font-bold text-blue-700">--</p>
                                 <div class="mt-1">
                                     <span id="my-status" class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-900">
                                         Memuat status...
@@ -172,7 +168,7 @@
                                         </svg>
                                     </div>
                                 </div>
-                                <p id="now-serving" class="mt-3 text-4xl font-black text-gray-900">--</p>
+                                <p id="now-serving" class="mt-3 text-2xl font-bold text-gray-900">--</p>
                                 <p class="mt-1 text-xs text-gray-500">Pasien di ruang periksa dokter</p>
                             </article>
 
@@ -186,7 +182,7 @@
                                         </svg>
                                     </div>
                                 </div>
-                                <p id="ahead-count" class="mt-3 text-2xl font-black text-gray-900 leading-snug">Menghitung...</p>
+                                <p id="ahead-count" class="mt-3 text-base font-bold text-gray-900 leading-snug">Menghitung...</p>
                                 <p class="mt-1 text-xs text-gray-500">Nomor dipanggil berubah saat periksa selesai.</p>
                             </article>
                         </div>
@@ -194,7 +190,7 @@
                         {{-- Section Petunjuk & Informasi Pasien (Sama Persis Style Kartu Putih Dashboard) --}}
                         <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
                             <div class="border-b border-gray-200 pb-4">
-                                <h3 class="text-xl font-bold text-gray-900 sm:text-2xl">Petunjuk Ruang Tunggu Pasien</h3>
+                                <h3 class="text-base font-bold text-gray-900 sm:text-lg">Petunjuk Ruang Tunggu Pasien</h3>
                                 <p class="mt-1 text-base text-gray-600">
                                     Halaman ini diperbarui otomatis setiap sepuluh detik. Data pribadi pasien tidak ditampilkan di layar.
                                 </p>

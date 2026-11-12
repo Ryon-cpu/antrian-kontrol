@@ -270,45 +270,35 @@
 
         {{-- Active Called Patient Spotlight (Jika ada yang sedang dipanggil) --}}
         <template x-if="activeEntry">
-            <div class="rounded-xl border-2 border-blue-400 bg-blue-50/50 p-5 shadow-sm sm:p-6">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div class="flex items-start gap-4">
-                        <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-blue-700 text-2xl font-black text-white shadow">
+            <div class="rounded-xl border border-blue-300 bg-blue-50/50 p-3 shadow-sm sm:p-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-blue-700 text-lg font-black text-white shadow">
                             <span x-text="activeEntry.number_label"></span>
                         </div>
-                        <div>
+                        <div class="flex flex-col gap-1">
                             <div class="flex items-center gap-2">
-                                <span class="rounded-full bg-blue-100 px-3 py-0.5 text-xs font-bold text-blue-900 uppercase">
-                                    Sedang Dipanggil
-                                </span>
-                                <span class="text-xs font-semibold text-gray-600" x-text="'Panggilan ke-' + activeEntry.call_count + ' dari 3'"></span>
+                                <span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-900 uppercase">Sedang Dipanggil</span>
+                                <span class="text-xs font-semibold text-gray-500" x-text="'Panggilan ke-' + activeEntry.call_count + ' dari 3'"></span>
                             </div>
-                            <h3 class="mt-1 text-2xl font-bold text-gray-900" x-text="activeEntry.patient?.name"></h3>
-                            <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-700">
-                                <span class="inline-flex items-center gap-1">
-                                    <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                    <span x-text="activeEntry.patient?.age + ' tahun'"></span>
-                                </span>
+                            <h3 class="text-base font-bold text-gray-900" x-text="activeEntry.patient?.name"></h3>
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-600">
+                                <span x-text="activeEntry.patient?.age + ' thn'"></span>
                                 <span>•</span>
-                                <span class="inline-flex items-center gap-1">
-                                    <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                    <span x-text="activeEntry.patient?.address"></span>
-                                </span>
-                            </div>
-                            <div class="mt-3 rounded-lg border border-blue-200 bg-white px-3.5 py-2 text-sm text-gray-800">
-                                <strong class="text-blue-950 font-semibold">Keluhan Sakit:</strong>
-                                <span class="ml-1" x-text="activeEntry.patient?.complaint"></span>
+                                <span x-text="activeEntry.patient?.address"></span>
+                                <span>•</span>
+                                <span><strong>Keluhan:</strong> <span class="italic" x-text="activeEntry.patient?.complaint"></span></span>
                             </div>
                         </div>
                     </div>
 
                     {{-- Spotlight Action Buttons --}}
-                    <div class="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end">
+                    <div class="flex flex-wrap items-center gap-2">
                         <button
                             type="button"
                             @click="doneEntry(activeEntry)"
                             :disabled="busy"
-                            class="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-green-700 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                            class="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-green-700 px-3 py-1.5 text-sm font-bold text-white shadow-sm hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
                         >
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             <span>Selesai Pemeriksaan</span>
@@ -318,7 +308,7 @@
                             type="button"
                             @click="callSpecific(activeEntry)"
                             :disabled="busy"
-                            class="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                            class="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-bold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                         >
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
                             <span>Panggil Ulang</span>
@@ -328,7 +318,7 @@
                             type="button"
                             @click="skipEntry(activeEntry)"
                             :disabled="busy"
-                            class="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                            class="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50"
                         >
                             <svg class="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
                             <span>Lewati Pasien</span>
@@ -338,7 +328,7 @@
                             type="button"
                             @click="cancelEntry(activeEntry)"
                             :disabled="busy"
-                            class="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50 disabled:opacity-50"
+                            class="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50 disabled:opacity-50"
                         >
                             <svg class="h-4 w-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             <span>Batalkan</span>
@@ -348,8 +338,11 @@
             </div>
         </template>
 
-        {{-- Queue List Section --}}
-        <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="queue-title">
+        {{-- Queue List + Done Panel Side by Side --}}
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+        {{-- Queue List Section (Antrian Aktif) --}}
+        <section class="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="queue-title">
             <div class="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <div class="flex items-center gap-2">
@@ -386,38 +379,36 @@
                         <option value="all">Semua antrian</option>
                         <option value="waiting">Menunggu</option>
                         <option value="called">Dipanggil</option>
-                        <option value="done">Selesai</option>
-                        <option value="cancelled">Dibatalkan</option>
                     </select>
                 </div>
             </div>
 
             {{-- Queue Cards Container --}}
             <div id="queue-list" class="mt-5 flex flex-col gap-3.5">
-                <template x-for="entry in filteredEntries" :key="entry.id">
-                    <article class="flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-5">
-                        <div class="flex items-start gap-4">
+                <template x-for="entry in filteredEntries.filter(e => e.status === 'waiting' || e.status === 'called')" :key="entry.id">
+                    <article class="flex items-center gap-3 rounded-lg border bg-white p-3 transition-shadow hover:shadow-sm sm:justify-between" :class="{ 'border-red-600': entry.status === 'cancelled', 'border-black': entry.status !== 'cancelled' }">
+                        <div class="flex items-center gap-3 flex-1 min-w-0">
                             {{-- Number Badge --}}
                             <div
-                                class="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl font-bold shadow-sm"
+                                class="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg font-bold bg-white"
                                 :class="{
-                                    'bg-yellow-100 text-yellow-900 border border-yellow-200': entry.status === 'waiting',
-                                    'bg-blue-100 text-blue-900 border border-blue-300 ring-2 ring-blue-300': entry.status === 'called',
-                                    'bg-green-100 text-green-900 border border-green-200': entry.status === 'done',
-                                    'bg-gray-100 text-gray-500 border border-gray-200': entry.status === 'cancelled'
+                                    'border border-black text-gray-900': entry.status === 'waiting',
+                                    'border border-black text-gray-900': entry.status === 'called',
+                                    'border border-black text-gray-900': entry.status === 'done',
+                                    'border border-red-600 text-red-600': entry.status === 'cancelled'
                                 }"
                             >
-                                <span class="text-xs font-semibold uppercase tracking-wider">No</span>
-                                <span class="text-xl font-black leading-none" x-text="entry.number_label"></span>
+                                <span class="text-[9px] font-semibold uppercase tracking-wider leading-none">No</span>
+                                <span class="text-sm font-black leading-none" x-text="entry.number_label"></span>
                             </div>
 
                             {{-- Patient Clinical Details --}}
-                            <div class="flex flex-col gap-1.5">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <h3 class="text-lg font-bold text-gray-900" x-text="entry.patient?.name"></h3>
+                            <div class="flex flex-col gap-0.5 min-w-0">
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <h3 class="text-sm font-bold text-gray-900" x-text="entry.patient?.name"></h3>
                                     {{-- Status Pill --}}
                                     <span
-                                        class="rounded-full px-2.5 py-0.5 text-xs font-bold"
+                                        class="rounded-full px-2 py-0.5 text-xs font-semibold"
                                         :class="{
                                             'bg-yellow-100 text-yellow-800': entry.status === 'waiting',
                                             'bg-blue-100 text-blue-800': entry.status === 'called',
@@ -426,26 +417,22 @@
                                         }"
                                         x-text="{
                                             waiting: 'Menunggu',
-                                            called: 'Sedang dipanggil',
+                                            called: 'Dipanggil',
                                             done: 'Selesai',
                                             cancelled: 'Dibatalkan'
                                         }[entry.status] || entry.status"
                                     ></span>
-
                                     <template x-if="entry.call_count > 0 && entry.status === 'called'">
-                                        <span class="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600" x-text="'Panggilan ke-' + entry.call_count"></span>
+                                        <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600" x-text="'Panggilan ke-' + entry.call_count"></span>
                                     </template>
                                 </div>
 
-                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
-                                    <span>Usia: <strong class="text-gray-800" x-text="entry.patient?.age + ' thn'"></strong></span>
+                                <div class="flex flex-wrap items-center gap-x-2 gap-y-0 text-xs text-gray-500">
+                                    <span x-text="entry.patient?.age + ' thn'"></span>
                                     <span>•</span>
-                                    <span class="truncate max-w-xs" x-text="entry.patient?.address"></span>
-                                </div>
-
-                                <div class="text-sm text-gray-700">
-                                    <span class="font-medium text-gray-900">Keluhan:</span>
-                                    <span class="italic text-gray-700" x-text="entry.patient?.complaint"></span>
+                                    <span class="truncate max-w-[12rem]" x-text="entry.patient?.address"></span>
+                                    <span>•</span>
+                                    <span class="italic" x-text="entry.patient?.complaint"></span>
                                 </div>
                             </div>
                         </div>
@@ -543,7 +530,7 @@
             {{-- Empty State (Dipertahankan ID dan Class untuk Kompatibilitas) --}}
             <div
                 id="empty-queue"
-                x-show="filteredEntries.length === 0"
+                x-show="filteredEntries.filter(e => e.status === 'waiting' || e.status === 'called').length === 0"
                 class="mt-6 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center"
                 style="display: none;"
             >
@@ -556,7 +543,109 @@
                 <p class="mt-1 max-w-sm text-sm text-gray-600">Belum ada data antrian untuk status ini.</p>
             </div>
         </section>
-    </section>
+
+        {{-- Panel Kanan: Sudah Diperiksa + Dibatalkan (stacked) --}}
+        <div class="lg:col-span-1 flex flex-col gap-4">
+
+            {{-- Panel: Sudah Diperiksa --}}
+            <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="done-title">
+                <div class="border-b border-gray-200 pb-3">
+                    <div class="flex items-center gap-2">
+                        <h2 id="done-title" class="text-base font-bold text-gray-900">Sudah diperiksa</h2>
+                        <span class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700" x-text="entries.filter(e => e.status === 'done').length + ' pasien'"></span>
+                    </div>
+                    <p class="mt-0.5 text-xs text-gray-500">Pasien yang sudah selesai diperiksa hari ini.</p>
+                </div>
+
+                <div class="mt-3 flex flex-col gap-2">
+                    <template x-for="entry in entries.filter(e => e.status === 'done').sort((a,b) => b.id - a.id)" :key="'done-' + entry.id">
+                        <div class="flex items-center gap-3 rounded-lg border border-black bg-white p-3">
+                            <div class="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg border border-black bg-white font-bold">
+                                <span class="text-[8px] uppercase tracking-wide leading-none text-gray-600">No</span>
+                                <span class="text-sm font-black leading-none text-gray-900" x-text="entry.number_label"></span>
+                            </div>
+                            <div class="flex flex-col gap-0.5 min-w-0 flex-1">
+                                <span class="text-sm font-semibold text-gray-900 truncate" x-text="entry.patient?.name"></span>
+                                <span class="text-xs font-semibold text-green-700">✓ Selesai Diperiksa</span>
+                            </div>
+                            {{-- Tombol Hapus --}}
+                            <button
+                                type="button"
+                                @click="deleteEntry(entry)"
+                                :disabled="busy"
+                                title="Hapus dari daftar"
+                                class="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-400 hover:border-red-300 hover:bg-red-50 hover:text-red-600 disabled:opacity-40 focus:outline-none transition-colors"
+                            >
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </template>
+
+                    <template x-if="entries.filter(e => e.status === 'done').length === 0">
+                        <div class="flex flex-col items-center justify-center py-6 text-center text-gray-400">
+                            <svg class="h-7 w-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span class="text-xs">Belum ada pasien selesai</span>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            {{-- Panel: Dibatalkan --}}
+            <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="cancelled-title">
+                <div class="border-b border-gray-200 pb-3">
+                    <div class="flex items-center gap-2">
+                        <h2 id="cancelled-title" class="text-base font-bold text-gray-900">Dibatalkan</h2>
+                        <span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700" x-text="entries.filter(e => e.status === 'cancelled').length + ' pasien'"></span>
+                    </div>
+                    <p class="mt-0.5 text-xs text-gray-500">Pasien yang antrian nya dibatalkan hari ini.</p>
+                </div>
+
+                <div class="mt-3 flex flex-col gap-2">
+                    <template x-for="entry in entries.filter(e => e.status === 'cancelled').sort((a,b) => b.id - a.id)" :key="'cancelled-' + entry.id">
+                        <div class="flex items-center gap-3 rounded-lg border border-red-400 bg-white p-3">
+                            <div class="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg border border-red-400 bg-white font-bold">
+                                <span class="text-[8px] uppercase tracking-wide leading-none text-red-500">No</span>
+                                <span class="text-sm font-black leading-none text-red-600" x-text="entry.number_label"></span>
+                            </div>
+                            <div class="flex flex-col gap-0.5 min-w-0 flex-1">
+                                <span class="text-sm font-semibold text-gray-900 truncate" x-text="entry.patient?.name"></span>
+                                <span class="text-xs font-semibold text-red-600">✕ Dibatalkan</span>
+                            </div>
+                            {{-- Tombol Hapus --}}
+                            <button
+                                type="button"
+                                @click="deleteEntry(entry)"
+                                :disabled="busy"
+                                title="Hapus dari daftar"
+                                class="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg border border-red-300 bg-white text-red-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40 focus:outline-none"
+                            >
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </template>
+
+                    <template x-if="entries.filter(e => e.status === 'cancelled').length === 0">
+                        <div class="flex flex-col items-center justify-center py-6 text-center text-gray-400">
+                            <svg class="h-7 w-7 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            <span class="text-xs">Tidak ada antrian dibatalkan</span>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+        </div>{{-- end panel kanan --}}
+
+        </div>{{-- end grid --}}
+
+    </section>{{-- end dashboard-panel --}}
 
     {{-- Modal Geser Antrian Pasien --}}
     <div

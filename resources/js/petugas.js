@@ -405,6 +405,21 @@ export function queueDashboard(config = {}) {
             this.openCancelModal(entry);
         },
 
+        async deleteEntry(entry) {
+            if (this.busy) return;
+            this.busy = true;
+            this.hideFeedback();
+            try {
+                await this.api(`petugas/queue/${entry.id}`, { method: 'DELETE' });
+                this.entries = this.entries.filter(e => e.id !== entry.id);
+                this.showFeedback(`Data antrian ${entry.number_label} (${entry.patient?.name}) berhasil dihapus.`);
+            } catch (error) {
+                this.showFeedback(error.message, true);
+            } finally {
+                this.busy = false;
+            }
+        },
+
         async confirmCancel() {
             if (!this.cancelTargetEntry || this.busy) return;
             const entry = this.cancelTargetEntry;

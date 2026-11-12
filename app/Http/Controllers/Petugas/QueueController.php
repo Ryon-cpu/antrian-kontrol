@@ -62,6 +62,14 @@ class QueueController extends Controller
         return $this->respond($this->queue->move($id, $data['steps'] ?? config('antrian.shift_steps')));
     }
 
+    public function destroy(int $id): JsonResponse
+    {
+        $entry = QueueEntry::today()->where('id', $id)->whereIn('status', ['cancelled', 'done'])->firstOrFail();
+        $entry->delete();
+
+        return response()->json(['message' => 'Data antrian berhasil dihapus.']);
+    }
+
     private function respond(QueueEntry $entry): JsonResponse
     {
         return response()->json(['data' => new QueueEntryResource($entry)]);

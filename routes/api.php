@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum,web')->group(function () {
         Route::post('queue/{id}/skip', [QueueController::class, 'skip'])->whereNumber('id');
         Route::post('queue/{id}/cancel', [QueueController::class, 'cancel'])->whereNumber('id');
         Route::post('queue/{id}/move', [QueueController::class, 'move'])->whereNumber('id');
+        Route::delete('queue/{id}', [QueueController::class, 'destroy'])->whereNumber('id');
     });
 
     Route::middleware('role:admin')->prefix('admin')->group(function () {
