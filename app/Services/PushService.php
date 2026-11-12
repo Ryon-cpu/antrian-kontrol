@@ -55,6 +55,7 @@ class PushService
             foreach ($webPush->flush() as $report) {
                 if ($report->isSubscriptionExpired()) {
                     PushSubscription::where('endpoint_hash', hash('sha256', $report->getEndpoint()))->delete();
+
                     continue;
                 }
 

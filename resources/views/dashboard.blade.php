@@ -11,6 +11,4 @@
             'staffName' => auth()->user()->name,
         ])
     </div>
-
-    @vite('resources/js/petugas.js')
 </x-app-layout>

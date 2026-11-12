@@ -1,13 +1,18 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Guest\LandingController;
+use App\Http\Controllers\ProfileController;
 use App\Services\SettingService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 
-Route::view('/antrian', 'companion.queue')->name('companion.queue');
+Route::get('/antrian', function (SettingService $settings) {
+    return view('companion.queue', [
+        'appName' => $settings->get('app_name', 'Antrian Pasien'),
+    ]);
+})->name('companion.queue');
 
 Route::get('/petugas', function (SettingService $settings) {
     return view('petugas.dashboard', [
@@ -15,7 +20,7 @@ Route::get('/petugas', function (SettingService $settings) {
     ]);
 })->name('petugas.dashboard');
 
-Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
+Route::get('/dashboard', function (Request $request) {
     abort_unless(
         $request->user()->is_active
             && in_array($request->user()->role->value, ['petugas', 'admin'], true),

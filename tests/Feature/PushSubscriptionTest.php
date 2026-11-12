@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\PushSubscription;
 use App\Models\QueueEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

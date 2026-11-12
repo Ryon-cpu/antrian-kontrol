@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Companion;
 
-use App\Http\Controllers\Controller;
 use App\Exceptions\ApiException;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterPatientRequest;
 use App\Http\Resources\CompanionEntryResource;
 use App\Models\PushSubscription;
@@ -11,6 +11,7 @@ use App\Models\QueueEntry;
 use App\Services\QueueService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class CompanionController extends Controller
 {
@@ -78,7 +79,7 @@ class CompanionController extends Controller
         );
 
         if (! $hostIsAllowed) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'endpoint' => 'Endpoint push harus berasal dari layanan push browser yang didukung.',
             ]);
         }

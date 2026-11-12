@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Guest;
 
-use App\Http\Controllers\Controller;
 use App\Enums\QueueStatus;
+use App\Http\Controllers\Controller;
 use App\Models\DoctorAchievement;
 use App\Models\QueueEntry;
 use App\Services\QueueService;

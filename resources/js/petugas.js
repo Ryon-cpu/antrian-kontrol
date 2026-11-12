@@ -1,353 +1,489 @@
-const app = document.getElementById('staff-app');
+import Alpine from 'alpinejs';
 
-if (app) {
-    const tokenKey = 'antrian_staff_token';
-    const authMode = app.dataset.authMode;
-    const usesWebSession = authMode === 'session';
-    const loginPanel = document.getElementById('login-panel');
-    const dashboardPanel = document.getElementById('dashboard-panel');
-    const loginForm = document.getElementById('login-form');
-    const loginButton = document.getElementById('login-button');
-    const logoutButton = document.getElementById('logout-button');
-    const feedback = document.getElementById('staff-feedback');
-    const practiceButton = document.getElementById('practice-button');
-    const callButton = document.getElementById('call-button');
-    const queueList = document.getElementById('queue-list');
-    const emptyQueue = document.getElementById('empty-queue');
-    const statusFilter = document.getElementById('status-filter');
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-    let token = usesWebSession ? null : window.sessionStorage.getItem(tokenKey);
-    let entries = [];
-    let busy = false;
+if (!window.Alpine) {
+    window.Alpine = Alpine;
+}
 
-    const statusLabels = {
-        waiting: 'Menunggu',
-        called: 'Sedang dipanggil',
-        done: 'Selesai',
-        cancelled: 'Dibatalkan',
-    };
+export function queueDashboard(config = {}) {
+    return {
+        authMode: config.authMode || 'session',
+        staffName: config.staffName || '',
+        userRole: '',
+        token: null,
+        tokenKey: 'antrian_staff_token',
+        isLoggedIn: config.authMode === 'session',
+        loginLoading: false,
+        loginForm: {
+            username: '',
+            password: '',
+        },
 
-    const showFeedback = (message, isError = false) => {
-        feedback.textContent = message;
-        feedback.className = 'rounded-md border px-4 py-3 text-base';
-        feedback.classList.add(...(isError
-            ? ['border-red-300', 'bg-red-50', 'text-red-800']
-            : ['border-blue-200', 'bg-blue-50', 'text-blue-900']));
-    };
+        // Data state pre-hydrated from config if provided
+        practice: config.initialPractice || {
+            state: 'tutup',
+            is_open: false,
+            message: 'Memuat status...',
+        },
+        nowServing: config.initialNowServing || '--',
+        entries: config.initialEntries || [],
+        statusFilter: 'all',
+        searchQuery: '',
+        busy: false,
+        soundEnabled: true,
 
-    const hideFeedback = () => feedback.classList.add('hidden');
+        // Move modal state
+        moveModalOpen: false,
+        moveTargetEntry: null,
+        moveSteps: 2,
 
-    const setBusy = (value) => {
-        busy = value;
-        callButton.disabled = value || (!entries.some((entry) => entry.status === 'waiting')
-            && !entries.some((entry) => entry.status === 'called'));
-        practiceButton.disabled = value;
-        if (logoutButton) {
-            logoutButton.disabled = value;
-        }
-    };
+        // Cancel modal state
+        cancelModalOpen: false,
+        cancelTargetEntry: null,
 
-    const api = async (path, options = {}) => {
-        const response = await fetch(`/api/${path}`, {
-            ...options,
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'application/json',
-                ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-                ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                ...options.headers,
-            },
-        });
-        const data = response.status === 204 ? {} : await response.json();
+        // Doctor & Clinic Info modal state
+        doctorModalOpen: false,
+        savingDoctorInfo: false,
+        doctorForm: {
+            place_name: config.initialDoctorData?.place_name || '',
+            place_address: config.initialDoctorData?.place_address || '',
+            place_description: config.initialDoctorData?.place_description || '',
+            practice_hours_note: config.initialDoctorData?.practice_hours_note || '',
+            doctor_name: config.initialDoctorData?.doctor_name || '',
+            doctor_title: config.initialDoctorData?.doctor_title || '',
+            doctor_bio: config.initialDoctorData?.doctor_bio || '',
+        },
+        achievementsList: config.initialAchievements || [],
 
-        if (response.status === 401) {
-            if (!usesWebSession) {
-                clearSession();
+        // Feedback state
+        feedback: {
+            show: false,
+            message: '',
+            isError: false,
+        },
+
+        // Polling
+        pollTimer: null,
+
+        // Audio Bell Synthesizer (Chime Bell)
+        playBell() {
+            if (!this.soundEnabled) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const now = ctx.currentTime;
+
+                // Nada 1: D5
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(587.33, now);
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.6);
+
+                // Nada 2: A4
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(440, now + 0.22);
+                gain2.gain.setValueAtTime(0.35, now + 0.22);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(now + 0.22);
+                osc2.stop(now + 0.85);
+            } catch (e) {
+                // Ignore audio context error if browser blocks autoplay
             }
-            throw new Error(data.message ?? 'Sesi telah berakhir. Silakan masuk kembali.');
-        }
+        },
 
-        if (!response.ok) {
-            throw new Error(data.message ?? Object.values(data.errors ?? {}).flat()[0] ?? 'Permintaan belum berhasil.');
-        }
+        get staffDisplay() {
+            if (!this.staffName) return '';
+            return this.userRole ? `${this.staffName} (${this.userRole})` : this.staffName;
+        },
 
-        return data;
-    };
+        get waitingCount() {
+            return this.entries.filter((e) => e.status === 'waiting').length;
+        },
 
-    const clearSession = () => {
-        token = null;
-        window.sessionStorage.removeItem(tokenKey);
-        loginPanel?.classList.remove('hidden');
-        dashboardPanel.classList.add('hidden');
-        dashboardPanel.classList.remove('flex');
-        logoutButton?.classList.add('hidden');
-    };
+        get calledCount() {
+            return this.entries.filter((e) => e.status === 'called').length;
+        },
 
-    const setPractice = (practice) => {
-        const open = practice.is_open;
-        document.getElementById('practice-status').textContent = practice.message;
-        document.getElementById('practice-status').className = `text-base font-semibold ${open ? 'text-green-700' : 'text-gray-700'}`;
-        practiceButton.textContent = open ? 'Tutup praktek' : 'Buka praktek';
-        practiceButton.dataset.open = String(open);
-        practiceButton.disabled = busy || practice.state === 'libur';
-    };
+        get activeEntry() {
+            return this.entries.find((e) => e.status === 'called') || null;
+        },
 
-    const statusBadgeClass = (status) => ({
-        waiting: 'bg-yellow-100 text-yellow-900',
-        called: 'bg-blue-100 text-blue-900',
-        done: 'bg-green-100 text-green-900',
-        cancelled: 'bg-gray-200 text-gray-800',
-    }[status] ?? 'bg-gray-100 text-gray-800');
+        get canCallNext() {
+            if (this.busy) return false;
+            return this.entries.some((e) => e.status === 'waiting' || e.status === 'called');
+        },
 
-    const createActionButton = (label, action, style = 'secondary') => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = label;
-        button.dataset.action = action;
-        button.className = style === 'primary'
-            ? 'min-h-12 rounded-md bg-blue-700 px-4 py-2 text-base font-bold text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400'
-            : style === 'danger'
-                ? 'min-h-12 rounded-md border border-red-300 bg-white px-4 py-2 text-base font-semibold text-red-800 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
-                : 'min-h-12 rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-semibold text-gray-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
-        return button;
-    };
-
-    const renderEntry = (entry) => {
-        const card = document.createElement('article');
-        card.className = 'flex flex-col gap-4 rounded-lg border border-gray-200 p-4 sm:p-5';
-
-        const heading = document.createElement('div');
-        heading.className = 'flex flex-wrap items-center justify-between gap-3';
-        const title = document.createElement('h3');
-        title.className = 'text-2xl font-bold text-gray-900';
-        title.textContent = `Antrian ${entry.number_label}`;
-        const badge = document.createElement('span');
-        badge.className = `rounded-full px-3 py-1 text-sm font-bold ${statusBadgeClass(entry.status)}`;
-        badge.textContent = statusLabels[entry.status] ?? entry.status;
-        heading.append(title, badge);
-        card.append(heading);
-
-        const patient = document.createElement('div');
-        patient.className = 'grid grid-cols-1 gap-2 text-base leading-relaxed text-gray-700 sm:grid-cols-2';
-        const fields = [
-            ['Nama', entry.patient.name],
-            ['Usia', `${entry.patient.age} tahun`],
-            ['Alamat', entry.patient.address],
-            ['Keterangan sakit', entry.patient.complaint],
-            ['Jumlah panggilan', `${entry.call_count} kali`],
-        ];
-        for (const [label, value] of fields) {
-            const line = document.createElement('p');
-            const fieldLabel = document.createElement('span');
-            fieldLabel.className = 'font-semibold text-gray-900';
-            fieldLabel.textContent = `${label}: `;
-            line.append(fieldLabel, document.createTextNode(String(value ?? '-')));
-            patient.append(line);
-        }
-        card.append(patient);
-
-        const actions = document.createElement('div');
-        actions.className = 'flex flex-wrap gap-3';
-        if (entry.status === 'called') {
-            actions.append(
-                createActionButton('Selesai', 'done', 'primary'),
-                createActionButton('Lewati', 'skip'),
-            );
-        }
-        if (['waiting', 'called'].includes(entry.status)) {
-            if (entry.status === 'waiting') {
-                actions.append(createActionButton('Geser ke bawah', 'move'));
+        get filteredEntries() {
+            let list = this.entries;
+            if (this.statusFilter !== 'all') {
+                list = list.filter((e) => e.status === this.statusFilter);
             }
-            actions.append(createActionButton('Batalkan antrian', 'cancel', 'danger'));
-        }
-        if (actions.childElementCount > 0) {
-            card.append(actions);
-        }
-
-        return card;
-    };
-
-    const renderQueue = (data) => {
-        entries = data.data;
-        document.getElementById('now-serving').textContent = data.now_serving ?? '--';
-        document.getElementById('waiting-count').textContent = String(entries.filter((entry) => entry.status === 'waiting').length);
-        document.getElementById('registered-count').textContent = String(entries.length);
-        setPractice(data.practice);
-
-        const selectedStatus = statusFilter.value;
-        const visibleEntries = selectedStatus === 'all'
-            ? entries
-            : entries.filter((entry) => entry.status === selectedStatus);
-
-        queueList.replaceChildren(...visibleEntries.map(renderEntry));
-        emptyQueue.classList.toggle('hidden', visibleEntries.length > 0);
-        setBusy(false);
-    };
-
-    const refreshQueue = async () => {
-        if ((!usesWebSession && !token) || busy) {
-            return;
-        }
-
-        try {
-            const data = await api('petugas/queue');
-            renderQueue(data);
-            hideFeedback();
-        } catch (error) {
-            if (usesWebSession || token) {
-                showFeedback(error.message, true);
+            if (this.searchQuery && this.searchQuery.trim()) {
+                const q = this.searchQuery.toLowerCase().trim();
+                list = list.filter((e) => {
+                    const numberMatch = e.number_label && String(e.number_label).toLowerCase().includes(q);
+                    const nameMatch = e.patient?.name && e.patient.name.toLowerCase().includes(q);
+                    const complaintMatch = e.patient?.complaint && e.patient.complaint.toLowerCase().includes(q);
+                    return numberMatch || nameMatch || complaintMatch;
+                });
             }
-        }
-    };
+            return list;
+        },
 
-    const showDashboard = async () => {
-        try {
-            const { user } = await api('auth/me');
-            if (!['petugas', 'admin'].includes(user.role)) {
-                if (!usesWebSession) {
-                    clearSession();
-                }
-                showFeedback('Akun ini tidak memiliki akses dashboard petugas.', true);
-                return;
-            }
-            document.getElementById('staff-name').textContent = `${user.name} (${user.role})`;
-            loginPanel?.classList.add('hidden');
-            dashboardPanel.classList.remove('hidden');
-            dashboardPanel.classList.add('flex');
-            logoutButton?.classList.remove('hidden');
-            await refreshQueue();
-        } catch (error) {
-            if (usesWebSession || token) {
-                showFeedback(error.message, true);
-            }
-        }
-    };
+        showFeedback(message, isError = false) {
+            this.feedback.message = message;
+            this.feedback.isError = isError;
+            this.feedback.show = true;
+        },
 
-    loginForm?.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        if (!loginForm.reportValidity()) {
-            return;
-        }
+        hideFeedback() {
+            this.feedback.show = false;
+        },
 
-        loginButton.disabled = true;
-        loginButton.textContent = 'Memeriksa akun...';
-        hideFeedback();
-        try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
+        async api(path, options = {}) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            const response = await fetch(`/api/${path}`, {
+                ...options,
+                credentials: 'same-origin',
                 headers: {
                     Accept: 'application/json',
-                    'Content-Type': 'application/json',
+                    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
                     ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+                    ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+                    ...options.headers,
                 },
-                body: JSON.stringify(Object.fromEntries(new FormData(loginForm).entries())),
             });
-            const data = await response.json();
+
+            const data = response.status === 204 ? {} : await response.json();
+
+            if (response.status === 401) {
+                if (this.authMode === 'token') {
+                    this.clearSession();
+                }
+                throw new Error(data.message ?? 'Sesi telah berakhir. Silakan masuk kembali.');
+            }
+
             if (!response.ok) {
-                throw new Error(data.message ?? Object.values(data.errors ?? {}).flat()[0] ?? 'Tidak dapat masuk.');
-            }
-            if (!['petugas', 'admin'].includes(data.user.role)) {
-                throw new Error('Akun ini tidak memiliki akses dashboard petugas.');
+                throw new Error(data.message ?? Object.values(data.errors ?? {}).flat()[0] ?? 'Permintaan belum berhasil.');
             }
 
-            token = data.token;
-            window.sessionStorage.setItem(tokenKey, token);
-            loginForm.reset();
-            await showDashboard();
-        } catch (error) {
-            showFeedback(error.message, true);
-        } finally {
-            loginButton.disabled = false;
-            loginButton.textContent = 'Masuk';
-        }
-    });
+            return data;
+        },
 
-    logoutButton?.addEventListener('click', async () => {
-        try {
-            if (token) {
-                await api('auth/logout', { method: 'POST' });
+        clearSession() {
+            this.token = null;
+            this.isLoggedIn = false;
+            this.userRole = '';
+            window.sessionStorage.removeItem(this.tokenKey);
+            this.stopPolling();
+        },
+
+        async loadUserProfile() {
+            try {
+                const { user } = await this.api('auth/me');
+                if (!['petugas', 'admin'].includes(user.role)) {
+                    if (this.authMode === 'token') this.clearSession();
+                    this.showFeedback('Akun ini tidak memiliki akses dashboard petugas.', true);
+                    return false;
+                }
+                this.staffName = user.name;
+                this.userRole = user.role;
+                return true;
+            } catch (error) {
+                if (this.authMode === 'token') {
+                    this.clearSession();
+                }
+                return false;
             }
-        } catch (error) {
-            showFeedback(error.message, true);
-        } finally {
-            clearSession();
-            showFeedback('Anda sudah keluar.');
-        }
+        },
+
+        async refreshQueue() {
+            if (this.authMode === 'token' && !this.token) {
+                return;
+            }
+
+            try {
+                const data = await this.api('petugas/queue');
+                this.entries = data.data || [];
+                this.nowServing = data.now_serving ?? '--';
+                if (data.practice) {
+                    this.practice = data.practice;
+                }
+                this.hideFeedback();
+            } catch (error) {
+                if (this.isLoggedIn) {
+                    this.showFeedback(error.message, true);
+                }
+            }
+        },
+
+        startPolling() {
+            this.stopPolling();
+            this.pollTimer = setInterval(() => {
+                this.refreshQueue();
+            }, 5000);
+        },
+
+        stopPolling() {
+            if (this.pollTimer) {
+                clearInterval(this.pollTimer);
+                this.pollTimer = null;
+            }
+        },
+
+        async handleLogin() {
+            this.loginLoading = true;
+            this.hideFeedback();
+
+            try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}),
+                    },
+                    body: JSON.stringify(this.loginForm),
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message ?? Object.values(data.errors ?? {}).flat()[0] ?? 'Tidak dapat masuk.');
+                }
+
+                if (!['petugas', 'admin'].includes(data.user.role)) {
+                    throw new Error('Akun ini tidak memiliki hak akses petugas atau admin.');
+                }
+
+                this.token = data.token;
+                window.sessionStorage.setItem(this.tokenKey, data.token);
+                this.staffName = data.user.name;
+                this.userRole = data.user.role;
+                this.isLoggedIn = true;
+
+                // Reset form login
+                this.loginForm.username = '';
+                this.loginForm.password = '';
+
+                await this.refreshQueue();
+                this.startPolling();
+                this.showFeedback(`Selamat datang, ${data.user.name}.`);
+            } catch (error) {
+                this.showFeedback(error.message, true);
+            } finally {
+                this.loginLoading = false;
+            }
+        },
+
+        async handleLogout() {
+            if (this.authMode === 'token') {
+                try {
+                    await this.api('auth/logout', { method: 'POST' });
+                } catch (e) {
+                    // Ignore logout error
+                }
+                this.clearSession();
+                this.showFeedback('Anda telah keluar.');
+            }
+        },
+
+        async togglePractice() {
+            if (this.busy || this.practice.state === 'libur') return;
+            this.busy = true;
+            this.hideFeedback();
+
+            try {
+                const action = this.practice.is_open ? 'close' : 'open';
+                await this.api(`petugas/practice/${action}`, { method: 'POST' });
+                await this.refreshQueue();
+                this.showFeedback(
+                    this.practice.is_open
+                        ? 'Praktek dibuka. Pendaftaran antrian pasien aktif.'
+                        : 'Praktek ditutup. Pendaftaran dinonaktifkan.'
+                );
+            } catch (error) {
+                this.showFeedback(error.message, true);
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        async callNext() {
+            if (!this.canCallNext) return;
+            this.busy = true;
+            this.hideFeedback();
+
+            try {
+                const res = await this.api('petugas/queue/call', { method: 'POST' });
+                this.playBell();
+                await this.refreshQueue();
+                const num = res.data?.number_label ?? '';
+                const count = res.data?.call_count ?? 1;
+                this.showFeedback(`Memanggil Antrian ${num} (Panggilan ke-${count}).`);
+            } catch (error) {
+                this.showFeedback(error.message, true);
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        async callSpecific(entry) {
+            if (this.busy) return;
+            this.busy = true;
+            this.hideFeedback();
+
+            try {
+                const res = await this.api('petugas/queue/call', {
+                    method: 'POST',
+                    body: JSON.stringify({ entry_id: entry.id }),
+                });
+                this.playBell();
+                await this.refreshQueue();
+                const count = res.data?.call_count ?? 1;
+                this.showFeedback(`Memanggil Antrian ${entry.number_label} (Panggilan ke-${count}).`);
+            } catch (error) {
+                this.showFeedback(error.message, true);
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        async doneEntry(entry) {
+            if (this.busy) return;
+            this.busy = true;
+            this.hideFeedback();
+
+            try {
+                await this.api(`petugas/queue/${entry.id}/done`, { method: 'POST' });
+                await this.refreshQueue();
+                this.showFeedback(`Antrian ${entry.number_label} (${entry.patient?.name}) selesai diperiksa.`);
+            } catch (error) {
+                this.showFeedback(error.message, true);
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        async skipEntry(entry) {
+            if (this.busy) return;
+            this.busy = true;
+            this.hideFeedback();
+
+            try {
+                await this.api(`petugas/queue/${entry.id}/skip`, { method: 'POST' });
+                await this.refreshQueue();
+                this.showFeedback(`Antrian ${entry.number_label} dilewati dan digeser ke bawah.`);
+            } catch (error) {
+                this.showFeedback(error.message, true);
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        openCancelModal(entry) {
+            this.cancelTargetEntry = entry;
+            this.cancelModalOpen = true;
+        },
+
+        closeCancelModal() {
+            this.cancelModalOpen = false;
+            this.cancelTargetEntry = null;
+        },
+
+        cancelEntry(entry) {
+            this.openCancelModal(entry);
+        },
+
+        async confirmCancel() {
+            if (!this.cancelTargetEntry || this.busy) return;
+            const entry = this.cancelTargetEntry;
+            this.busy = true;
+            this.hideFeedback();
+
+            try {
+                await this.api(`petugas/queue/${entry.id}/cancel`, { method: 'POST' });
+                await this.refreshQueue();
+                this.showFeedback(`Antrian ${entry.number_label} (${entry.patient?.name}) berhasil dibatalkan.`);
+                this.closeCancelModal();
+            } catch (error) {
+                this.showFeedback(error.message, true);
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        openMoveModal(entry) {
+            this.moveTargetEntry = entry;
+            this.moveSteps = 2;
+            this.moveModalOpen = true;
+        },
+
+        closeMoveModal() {
+            this.moveModalOpen = false;
+            this.moveTargetEntry = null;
+        },
+
+        async confirmMove() {
+            if (!this.moveTargetEntry) return;
+            this.busy = true;
+            this.hideFeedback();
+
+            try {
+                await this.api(`petugas/queue/${this.moveTargetEntry.id}/move`, {
+                    method: 'POST',
+                    body: JSON.stringify({ steps: parseInt(this.moveSteps, 10) }),
+                });
+                await this.refreshQueue();
+                this.showFeedback(
+                    `Antrian ${this.moveTargetEntry.number_label} digeser ${this.moveSteps} posisi ke bawah.`
+                );
+                this.closeMoveModal();
+            } catch (error) {
+                this.showFeedback(error.message, true);
+            } finally {
+                this.busy = false;
+            }
+        },
+
+        async init() {
+            if (this.authMode === 'token') {
+                this.token = window.sessionStorage.getItem(this.tokenKey);
+                if (this.token) {
+                    this.isLoggedIn = true;
+                    await this.loadUserProfile();
+                }
+            } else {
+                this.isLoggedIn = true;
+                this.loadUserProfile();
+            }
+
+            if (this.isLoggedIn) {
+                // If initial entries were not provided, fetch them
+                if (this.entries.length === 0) {
+                    await this.refreshQueue();
+                }
+                this.startPolling();
+            }
+        },
+    };
+}
+
+// Register to Alpine
+if (window.Alpine) {
+    window.Alpine.data('queueDashboard', queueDashboard);
+} else {
+    document.addEventListener('alpine:init', () => {
+        window.Alpine.data('queueDashboard', queueDashboard);
     });
-
-    practiceButton.addEventListener('click', async () => {
-        const action = practiceButton.dataset.open === 'true' ? 'close' : 'open';
-        setBusy(true);
-        try {
-            const data = await api(`petugas/practice/${action}`, { method: 'POST' });
-            setPractice(data.practice);
-            showFeedback(data.practice.message);
-        } catch (error) {
-            showFeedback(error.message, true);
-        } finally {
-            setBusy(false);
-            await refreshQueue();
-        }
-    });
-
-    callButton.addEventListener('click', async () => {
-        setBusy(true);
-        try {
-            await api('petugas/queue/call', { method: 'POST', body: JSON.stringify({}) });
-            showFeedback('Panggilan berhasil dikirim.');
-            await refreshQueue();
-        } catch (error) {
-            showFeedback(error.message, true);
-        } finally {
-            setBusy(false);
-            await refreshQueue();
-        }
-    });
-
-    queueList.addEventListener('click', async (event) => {
-        const button = event.target.closest('button[data-action]');
-        if (!button || busy) {
-            return;
-        }
-
-        const card = button.closest('article');
-        const number = card.querySelector('h3').textContent.replace('Antrian ', '');
-        const entry = entries.find((item) => item.number_label === number);
-        if (!entry) {
-            showFeedback('Data antrian tidak ditemukan. Segarkan daftar lalu coba lagi.', true);
-            return;
-        }
-
-        const action = button.dataset.action;
-        if (action === 'cancel' && !window.confirm(`Batalkan antrian ${number}?`)) {
-            return;
-        }
-
-        setBusy(true);
-        try {
-            const options = action === 'move'
-                ? { method: 'POST', body: JSON.stringify({}) }
-                : { method: 'POST' };
-            await api(`petugas/queue/${entry.id}/${action}`, options);
-            showFeedback(`Aksi "${button.textContent}" berhasil untuk antrian ${number}.`);
-            await refreshQueue();
-        } catch (error) {
-            showFeedback(error.message, true);
-        } finally {
-            setBusy(false);
-            await refreshQueue();
-        }
-    });
-
-    statusFilter.addEventListener('change', () => {
-        if (usesWebSession || token) {
-            refreshQueue();
-        }
-    });
-
-    if (usesWebSession || token) {
-        showDashboard();
-    }
-    window.setInterval(refreshQueue, 5000);
 }
