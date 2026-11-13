@@ -43,9 +43,9 @@ class LandingController extends Controller
                 'name' => $settings->get('doctor_name'),
                 'title' => $settings->get('doctor_title'),          // gelar
                 'bio' => $settings->get('doctor_bio'),
-                'photo_url' => $photo ? Storage::disk('public')->url($photo) : null,
+                'photo_url' => $photo ? Storage::url($photo) : null,
             ],
-            'achievements' => DoctorAchievement::orderBy('sort_order')->orderBy('id')->get()->map(fn ($a) => [
+            'achievements' => DoctorAchievement::orderBy('sort_order')->orderBy('id')->get()->map(fn($a) => [
                 'id' => $a->id,
                 'title' => $a->title,
                 'description' => $a->description,
