@@ -382,13 +382,26 @@ class QueueFlowTest extends TestCase
         );
     }
 
-    public function test_practice_cannot_be_opened_on_weekend(): void
+    public function test_practice_can_be_opened_and_patients_can_register_on_weekends(): void
     {
-        Carbon::setTestNow('2026-11-14 10:00:00'); // Sabtu
         $this->actAsPetugas();
 
-        $this->postJson('/api/petugas/practice/open')->assertStatus(409);
-        $this->registerPatient()->assertStatus(423);
+        foreach (['2026-11-14 10:00:00', '2026-11-15 10:00:00'] as $weekendDate) {
+            $this->travelTo($weekendDate);
+
+            $this->postJson('/api/petugas/practice/open')
+                ->assertOk()
+                ->assertJsonPath('practice.state', 'buka')
+                ->assertJsonPath('practice.is_open', true);
+
+            $this->assertDatabaseHas('settings', ['key' => 'is_open', 'value' => '1']);
+
+            $this->get('/')
+                ->assertOk()
+                ->assertSee('data-practice-open="true"', false);
+
+            $this->registerPatient()->assertCreated();
+        }
     }
 
     public function test_companion_cannot_access_petugas_endpoints(): void

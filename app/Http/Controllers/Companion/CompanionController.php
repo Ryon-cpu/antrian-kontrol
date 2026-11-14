@@ -9,13 +9,22 @@ use App\Http\Resources\CompanionEntryResource;
 use App\Models\PushSubscription;
 use App\Models\QueueEntry;
 use App\Services\QueueService;
+use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class CompanionController extends Controller
 {
     public function __construct(private readonly QueueService $queue) {}
+
+    public function page(SettingService $settings): View
+    {
+        return view('companion.queue', [
+            'appName' => $settings->get('app_name', 'Antrian Pasien'),
+        ]);
+    }
 
     /** Daftarkan pasien (tanpa login/OTP). Menghasilkan device_token untuk disimpan di HP. */
     public function register(RegisterPatientRequest $request): JsonResponse

@@ -11,7 +11,7 @@ class StaffDashboardTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_can_open_staff_login_shell_but_cannot_read_patient_records(): void
+    public function test_guest_cannot_open_staff_dashboards_or_read_patient_records(): void
     {
         QueueEntry::create([
             'queue_date' => today()->toDateString(),
@@ -26,13 +26,9 @@ class StaffDashboardTest extends TestCase
         ]);
 
         $this->get('/petugas')
-            ->assertOk()
-            ->assertSee('Masuk petugas')
-            ->assertSee('Antrian hari ini')
-            ->assertSee('data-auth-mode="token"', false)
-            ->assertDontSee('Pasien Rahasia')
-            ->assertDontSee('Alamat Rahasia')
-            ->assertDontSee('Keluhan Rahasia');
+            ->assertRedirect('/login');
+
+        $this->get('/dashboard')->assertRedirect('/login');
 
         $this->getJson('/api/petugas/queue')->assertUnauthorized();
     }
@@ -46,6 +42,12 @@ class StaffDashboardTest extends TestCase
             'role' => 'petugas',
             'is_active' => true,
         ]);
+
+        $this->actingAs($staff)->get('/petugas')
+            ->assertOk()
+            ->assertSee('Dashboard petugas')
+            ->assertSee('Antrian hari ini')
+            ->assertSee('data-auth-mode="token"', false);
 
         $this->actingAs($staff)->get('/dashboard')
             ->assertOk()
@@ -67,7 +69,49 @@ class StaffDashboardTest extends TestCase
             'is_active' => false,
         ]);
 
+        $this->actingAs($inactiveStaff)->get('/petugas')->assertForbidden();
         $this->actingAs($inactiveStaff)->get('/dashboard')->assertForbidden();
+    }
+
+    public function test_active_admin_can_open_the_staff_dashboard(): void
+    {
+        $admin = User::create([
+            'name' => 'Administrator',
+            'email' => 'admin@example.test',
+            'password' => 'password-rahasia',
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->get('/petugas')->assertOk();
+    }
+
+    public function test_role_middleware_accepts_a_plain_string_role_value(): void
+    {
+        $staff = User::create([
+            'name' => 'Petugas Klinik',
+            'email' => 'petugas-string@example.test',
+            'password' => 'password-rahasia',
+            'role' => 'petugas',
+            'is_active' => true,
+        ]);
+        $staff->mergeCasts(['role' => 'string']);
+
+        $this->actingAs($staff)->get('/dashboard')->assertOk();
+    }
+
+    public function test_role_middleware_forbids_an_active_user_with_a_null_role(): void
+    {
+        $staff = User::create([
+            'name' => 'Petugas Tanpa Role',
+            'email' => 'petugas-null-role@example.test',
+            'password' => 'password-rahasia',
+            'role' => 'petugas',
+            'is_active' => true,
+        ]);
+        $staff->role = null;
+
+        $this->actingAs($staff)->get('/dashboard')->assertForbidden();
     }
 
     public function test_breeze_session_authenticates_the_staff_api(): void

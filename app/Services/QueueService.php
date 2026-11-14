@@ -25,10 +25,6 @@ class QueueService
     /** @return array{state: string, is_open: bool, message: string} */
     public function practiceStatus(): array
     {
-        if (now()->isWeekend()) {
-            return ['state' => 'libur', 'is_open' => false, 'message' => 'Libur (Sabtu dan Minggu). Antrian tutup.'];
-        }
-
         if ($this->settings->bool('is_open')) {
             return ['state' => 'buka', 'is_open' => true, 'message' => 'Praktek sedang buka.'];
         }
@@ -38,10 +34,6 @@ class QueueService
 
     public function openPractice(): void
     {
-        if (now()->isWeekend()) {
-            throw new ApiException('Hari Sabtu dan Minggu libur, praktek tidak bisa dibuka.', 409);
-        }
-
         $this->settings->set('is_open', '1');
         $this->settings->set('opened_at', now()->toDateTimeString());
     }
