@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -50,16 +51,41 @@ class UserController extends Controller
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
-        if ($user->is($request->user())) {
-            if (($data['is_active'] ?? true) === false || (isset($data['role']) && $data['role'] !== $user->role->value)) {
-                throw new ApiException('Anda tidak bisa menonaktifkan atau mengubah role akun sendiri.', 409);
+        $user = DB::transaction(function () use ($request, $user, $data): User {
+            $activeAdmins = User::query()
+                ->where('role', UserRole::Admin->value)
+                ->where('is_active', true)
+                ->lockForUpdate()
+                ->get(['id']);
+
+            $user = User::query()->lockForUpdate()->findOrFail($user->getKey());
+
+            if ($user->is($request->user())) {
+                if (
+                    (array_key_exists('is_active', $data) && ! (bool) $data['is_active'])
+                    || (isset($data['role']) && $data['role'] !== $user->role->value)
+                ) {
+                    throw new ApiException('Anda tidak bisa menonaktifkan atau mengubah role akun sendiri.', 409);
+                }
             }
-        }
 
-        $user->fill($data)->save();
+            $adminIsBeingRemoved = $user->role === UserRole::Admin
+                && $user->is_active
+                && (
+                    (array_key_exists('is_active', $data) && ! (bool) $data['is_active'])
+                    || (isset($data['role']) && $data['role'] !== UserRole::Admin->value)
+                );
 
-        // Akun dinonaktifkan atau password diganti → semua sesi login lama dicabut.
-        if (($data['is_active'] ?? true) === false || isset($data['password'])) {
+            if ($adminIsBeingRemoved && $activeAdmins->count() <= 1) {
+                throw new ApiException('Sistem harus memiliki minimal satu akun admin aktif.', 409);
+            }
+
+            $user->fill($data)->save();
+
+            return $user;
+        });
+
+        if ((array_key_exists('is_active', $data) && ! (bool) $data['is_active']) || isset($data['password'])) {
             $user->tokens()->delete();
         }
 

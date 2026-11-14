@@ -37,29 +37,29 @@ class QueueController extends Controller
     {
         $data = $request->validate(['entry_id' => ['nullable', 'integer']]);
 
-        return $this->respond($this->queue->call($data['entry_id'] ?? null));
+        return $this->respond($this->queue->call($data['entry_id'] ?? null, $request->user()));
     }
 
-    public function done(int $id): JsonResponse
+    public function done(Request $request, int $id): JsonResponse
     {
-        return $this->respond($this->queue->done($id));
+        return $this->respond($this->queue->done($id, $request->user()));
     }
 
-    public function skip(int $id): JsonResponse
+    public function skip(Request $request, int $id): JsonResponse
     {
-        return $this->respond($this->queue->skip($id));
+        return $this->respond($this->queue->skip($id, auto: false, actor: $request->user()));
     }
 
-    public function cancel(int $id): JsonResponse
+    public function cancel(Request $request, int $id): JsonResponse
     {
-        return $this->respond($this->queue->cancel($id));
+        return $this->respond($this->queue->cancel($id, $request->user()));
     }
 
     public function move(Request $request, int $id): JsonResponse
     {
         $data = $request->validate(['steps' => ['nullable', 'integer', 'min:1', 'max:20']]);
 
-        return $this->respond($this->queue->move($id, $data['steps'] ?? config('antrian.shift_steps')));
+        return $this->respond($this->queue->move($id, $data['steps'] ?? config('antrian.shift_steps'), $request->user()));
     }
 
     public function destroy(int $id): JsonResponse

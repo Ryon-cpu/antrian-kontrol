@@ -70,6 +70,47 @@ class QueueFlowTest extends TestCase
         $this->registerPatient()->assertCreated()->assertJsonPath('entry.number_label', '02');
     }
 
+    public function test_numbers_do_not_reuse_on_the_same_day_but_reset_on_next_day(): void
+    {
+        $this->openPractice();
+
+        $this->registerPatient(null, 'Pasien hari ini 1')->assertCreated()->assertJsonPath('entry.number_label', '01');
+        $this->registerPatient(null, 'Pasien hari ini 2')->assertCreated()->assertJsonPath('entry.number_label', '02');
+        $this->registerPatient(null, 'Pasien hari ini 3')->assertCreated()->assertJsonPath('entry.number_label', '03');
+
+        $this->travelTo('2026-11-12 08:00:00');
+
+        $this->registerPatient(null, 'Pasien besok 1')->assertCreated()->assertJsonPath('entry.number_label', '01');
+    }
+
+    public function test_deleted_queue_number_is_not_reused_on_the_same_day(): void
+    {
+        $this->openPractice();
+        $this->registerPatient()->assertCreated()->assertJsonPath('entry.number_label', '01');
+        $this->registerPatient()->assertCreated()->assertJsonPath('entry.number_label', '02');
+        $this->registerPatient()->assertCreated()->assertJsonPath('entry.number_label', '03');
+
+        QueueEntry::where('number', 3)->firstOrFail()->delete();
+
+        $this->registerPatient()
+            ->assertCreated()
+            ->assertJsonPath('entry.number_label', '04');
+    }
+
+    public function test_registration_stays_full_after_the_highest_issued_number_is_deleted(): void
+    {
+        config(['antrian.max_number' => 2]);
+        $this->openPractice();
+        $this->registerPatient()->assertCreated()->assertJsonPath('entry.number_label', '01');
+        $this->registerPatient()->assertCreated()->assertJsonPath('entry.number_label', '02');
+
+        QueueEntry::where('number', 2)->firstOrFail()->delete();
+
+        $this->registerPatient()
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Antrian hari ini penuh.');
+    }
+
     public function test_companion_queue_page_shows_queue_status_without_patient_details(): void
     {
         $this->openPractice();
@@ -95,7 +136,7 @@ class QueueFlowTest extends TestCase
             ->assertSee('Status antrian Anda')
             ->assertSee('Sedang diperiksa / dipanggil')
             ->assertSee('id="ahead-count"', false)
-            ->assertSee('resources/js/companion-queue.js')
+            ->assertSee('/build/assets/companion-queue-')
             ->assertDontSee('Nama Pasien Privat')
             ->assertDontSee('Nama Pasien Berikutnya');
     }
@@ -274,20 +315,55 @@ class QueueFlowTest extends TestCase
             ->assertDontSee('Batuk dan demam');
     }
 
-    public function test_same_device_can_register_multiple_patients_and_staff_sees_each_entry(): void
+    public function test_queue_actions_are_logged_with_event_history(): void
+    {
+        $this->openPractice();
+        $entryId = QueueEntry::first()?->id;
+
+        if ($entryId === null) {
+            $token = $this->registerPatient()->assertCreated()->json('device_token');
+            $entryId = QueueEntry::firstOrFail()->id;
+        }
+
+        $this->postJson('/api/petugas/queue/call')->assertOk();
+        $this->postJson("/api/petugas/queue/{$entryId}/skip")->assertOk();
+
+        $this->assertDatabaseHas('queue_events', [
+            'queue_entry_id' => $entryId,
+            'event_type' => 'registered',
+        ]);
+        $this->assertDatabaseHas('queue_events', [
+            'queue_entry_id' => $entryId,
+            'event_type' => 'called',
+            'actor_role' => 'petugas',
+        ]);
+        $this->assertDatabaseHas('queue_events', [
+            'queue_entry_id' => $entryId,
+            'event_type' => 'skipped',
+            'actor_role' => 'petugas',
+        ]);
+    }
+
+    public function test_same_device_cannot_register_a_second_active_queue_until_the_first_is_resolved(): void
     {
         $this->openPractice();
 
         $token = $this->registerPatient()->assertCreated()->json('device_token');
+
+        $this->registerPatient($token, 'Pasien Kedua dari Perangkat Sama')
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Perangkat ini sudah memiliki antrian aktif. Selesaikan atau batalkan antrian sebelumnya sebelum mendaftar baru.');
+
+        $this->assertDatabaseCount('queue_entries', 1);
+
+        $first = QueueEntry::firstOrFail();
+        $this->postJson("/api/petugas/queue/{$first->id}/cancel")->assertOk();
+
         $this->registerPatient($token, 'Pasien Kedua dari Perangkat Sama')
             ->assertCreated()
             ->assertJsonPath('entry.number_label', '02');
 
-        $this->getJson('/api/petugas/queue')
-            ->assertOk()
-            ->assertJsonCount(2, 'data')
-            ->assertJsonPath('data.0.patient.name', 'Bapak Slamet')
-            ->assertJsonPath('data.1.patient.name', 'Pasien Kedua dari Perangkat Sama');
+        $this->assertDatabaseCount('queue_entries', 2);
     }
 
     public function test_call_limited_to_three_then_skip_moves_patient_down(): void
@@ -341,7 +417,7 @@ class QueueFlowTest extends TestCase
         $this->registerPatient($token)->assertCreated();
     }
 
-    public function test_skipped_patient_remains_visible_and_device_can_register_another_patient(): void
+    public function test_skipped_patient_remains_visible_and_device_cannot_register_another_active_queue(): void
     {
         $this->openPractice();
         $token = $this->registerPatient()->assertCreated()->json('device_token');
@@ -359,8 +435,8 @@ class QueueFlowTest extends TestCase
             ->assertJsonPath('entry.status', 'waiting');
 
         $this->registerPatient($token, 'Pasien Setelah Skip')
-            ->assertCreated()
-            ->assertJsonPath('entry.number_label', '02');
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Perangkat ini sudah memiliki antrian aktif. Selesaikan atau batalkan antrian sebelumnya sebelum mendaftar baru.');
     }
 
     public function test_staff_can_move_a_waiting_patient_down_without_changing_their_queue_number(): void

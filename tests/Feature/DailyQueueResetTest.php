@@ -39,6 +39,7 @@ class DailyQueueResetTest extends TestCase
     {
         $this->artisan('schedule:list')
             ->expectsOutputToContain('queue:daily-reset')
+            ->expectsOutputToContain('queue:purge-old')
             ->expectsOutputToContain('queue:process-timeouts')
             ->assertSuccessful();
     }

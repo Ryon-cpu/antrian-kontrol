@@ -86,6 +86,25 @@ class StaffDashboardTest extends TestCase
         $this->actingAs($admin)->get('/petugas')->assertOk();
     }
 
+    public function test_admin_sees_a_separate_dashboard_from_petugas(): void
+    {
+        $admin = User::create([
+            'name' => 'Administrator',
+            'email' => 'admin-dashboard@example.test',
+            'password' => 'password-rahasia',
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Dashboard Admin')
+            ->assertSee('Panel administrasi klinik')
+            ->assertDontSee('Dashboard petugas')
+            ->assertDontSee('Panggil berikutnya');
+    }
+
     public function test_role_middleware_accepts_a_plain_string_role_value(): void
     {
         $staff = User::create([

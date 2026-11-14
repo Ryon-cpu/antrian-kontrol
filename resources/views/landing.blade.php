@@ -33,7 +33,6 @@
                             </span>
                         </a>
                     </div>
-
                     <div class="flex items-center gap-3">
                         <button id="install-app" type="button"
                             class="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -43,7 +42,6 @@
                             </svg>
                             <span>Pasang aplikasi</span>
                         </button>
-
                         <span
                             class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold {{ $practice['is_open'] ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700' }}">
                             <span
@@ -54,7 +52,6 @@
                 </div>
             </div>
         </nav>
-
         {{-- Main Content --}}
         <main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 flex-1 flex flex-col gap-8">
             {{-- Form Pendaftaran Pemeriksaan (Wajib Paling Atas) --}}
@@ -233,12 +230,6 @@
                                 <h3 class="text-2xl font-black text-gray-900">
                                     {{ trim(($doctor['name'] ?? '') . ' ' . ($doctor['title'] ?? '')) ?: 'Informasi dokter belum tersedia' }}
                                 </h3>
-                                <div class="mt-1 flex flex-wrap gap-2">
-                                    <span
-                                        class="inline-flex items-center rounded-full bg-blue-100 px-3 py-0.5 text-xs font-bold text-blue-900">
-                                        IDI Cabang Sumenep (STR: 3411100316065696)
-                                    </span>
-                                </div>
                             </div>
 
                             @if ($doctor['bio'])
@@ -256,7 +247,7 @@
                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                 clip-rule="evenodd" />
                         </svg>
-                        <span>Terdaftar resmi sebagai tenaga medis profesional Kabupaten Sumenep.</span>
+                        <span>Informasi profil dikelola oleh pengelola klinik.</span>
                     </div>
                 </article>
             </section>
@@ -273,10 +264,9 @@
                             </svg>
                             <span class="text-xs font-bold uppercase tracking-wider">Rekam Jejak & Pengabdian</span>
                         </div>
-                        <h2 id="achievements-title" class="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">Prestasi
-                            dokter</h2>
+                        <h2 id="achievements-title" class="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">Prestasi dokter</h2>
                         <p class="mt-1 text-sm text-gray-600">
-                            Riwayat kepemimpinan kesehatan daerah dan keanggotaan profesi di Kabupaten Sumenep.
+                            Informasi prestasi dan kegiatan yang dimasukkan oleh pengelola.
                         </p>
                     </div>
 

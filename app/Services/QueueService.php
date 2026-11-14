@@ -6,7 +6,11 @@ use App\Enums\QueueStatus;
 use App\Exceptions\ApiException;
 use App\Models\PushSubscription;
 use App\Models\QueueEntry;
+use App\Models\QueueEvent;
+use App\Models\QueueNumberCounter;
+use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Throwable;
@@ -62,35 +66,76 @@ class QueueService
         $deviceToken = $deviceToken ?: Str::random(64);
         $hash = hash('sha256', $deviceToken);
 
+        $lock = Cache::lock("queue:device:{$hash}", 10);
         $entry = null;
+
         for ($attempt = 0; $attempt < 3 && $entry === null; $attempt++) {
             try {
-                $entry = DB::transaction(function () use ($data, $hash) {
-                    $max = config('antrian.max_number');
-                    $next = (int) QueueEntry::today()->max('number') + 1;
+                $entry = $lock->block(5, function () use ($data, $hash) {
+                    return DB::transaction(function () use ($data, $hash) {
+                        $existing = QueueEntry::today()
+                            ->where('device_hash', $hash)
+                            ->whereIn('status', QueueStatus::activeValues())
+                            ->lockForUpdate()
+                            ->first();
 
-                    if ($next > $max) {
-                        throw new ApiException('Antrian hari ini penuh.', 409);
-                    }
+                        if ($existing) {
+                            throw new ApiException(
+                                'Perangkat ini sudah memiliki antrian aktif. Selesaikan atau batalkan antrian sebelumnya sebelum mendaftar baru.',
+                                409
+                            );
+                        }
 
-                    return QueueEntry::create([
-                        'queue_date' => today()->toDateString(),
-                        'number' => $next,
-                        'position' => (int) QueueEntry::today()->max('position') + 1,
-                        'device_hash' => $hash,
-                        'patient_name' => $data['patient_name'],
-                        'patient_age' => $data['patient_age'],
-                        'patient_address' => $data['patient_address'],
-                        'complaint' => $data['complaint'],
-                        'status' => QueueStatus::Waiting,
-                    ]);
+                        $queueDate = today()->toDateString();
+                        $counter = QueueNumberCounter::query()
+                            ->where('queue_date', $queueDate)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if (! $counter) {
+                            $counter = QueueNumberCounter::create([
+                                'queue_date' => $queueDate,
+                                'last_number' => (int) QueueEntry::query()
+                                    ->where('queue_date', $queueDate)
+                                    ->max('number'),
+                            ]);
+                        }
+
+                        $max = config('antrian.max_number');
+                        $next = $counter->last_number + 1;
+
+                        if ($next > $max) {
+                            throw new ApiException('Antrian hari ini penuh.', 409);
+                        }
+
+                        $counter->forceFill(['last_number' => $next])->save();
+
+                        $entry = QueueEntry::create([
+                            'queue_date' => $queueDate,
+                            'number' => $next,
+                            'position' => (int) QueueEntry::today()->max('position') + 1,
+                            'device_hash' => $hash,
+                            'patient_name' => $data['patient_name'],
+                            'patient_age' => $data['patient_age'],
+                            'patient_address' => $data['patient_address'],
+                            'complaint' => $data['complaint'],
+                            'status' => QueueStatus::Waiting,
+                        ]);
+
+                        $this->recordEvent($entry, 'registered', metadata: ['device_hash' => $hash]);
+
+                        return $entry;
+                    });
                 });
             } catch (UniqueConstraintViolationException) {
-                // Dua pendaftar mendapat nomor yang sama pada saat bersamaan: ulangi.
                 if ($attempt === 2) {
                     throw new ApiException('Server sedang sibuk, silakan coba lagi.', 503);
                 }
             }
+        }
+
+        if ($entry === null || $entry === false) {
+            throw new ApiException('Server sedang sibuk, silakan coba lagi.', 503);
         }
 
         return [$entry, $deviceToken];
@@ -101,11 +146,11 @@ class QueueService
     // ------------------------------------------------------------------
 
     /** Panggil pasien. Tanpa $entryId: panggil ulang yang sedang dipanggil, atau yang berikutnya. */
-    public function call(?int $entryId = null): QueueEntry
+    public function call(?int $entryId = null, ?User $actor = null): QueueEntry
     {
         $maxCalls = config('antrian.max_calls');
 
-        $entry = DB::transaction(function () use ($entryId, $maxCalls) {
+        $entry = DB::transaction(function () use ($entryId, $maxCalls, $actor) {
             $current = QueueEntry::today()->where('status', QueueStatus::Called->value)->lockForUpdate()->first();
 
             if ($entryId !== null) {
@@ -147,6 +192,8 @@ class QueueService
                 'notified_near' => true,
             ])->save();
 
+            $this->recordEvent($entry, 'called', $actor, ['call_count' => $entry->call_count]);
+
             return $entry;
         });
 
@@ -161,9 +208,9 @@ class QueueService
         return $entry->refresh();
     }
 
-    public function done(int $entryId): QueueEntry
+    public function done(int $entryId, ?User $actor = null): QueueEntry
     {
-        $entry = DB::transaction(function () use ($entryId) {
+        $entry = DB::transaction(function () use ($entryId, $actor) {
             $entry = $this->findToday($entryId, lock: true);
 
             if ($entry->status !== QueueStatus::Called) {
@@ -171,6 +218,7 @@ class QueueService
             }
 
             $entry->forceFill(['status' => QueueStatus::Done, 'finished_at' => now()])->save();
+            $this->recordEvent($entry, 'done', $actor);
 
             return $entry;
         });
@@ -182,9 +230,9 @@ class QueueService
     }
 
     /** "Lewati": pasien tidak hadir / belum siap, digeser agak ke bawah. */
-    public function skip(int $entryId, bool $auto = false): QueueEntry
+    public function skip(int $entryId, bool $auto = false, ?User $actor = null): QueueEntry
     {
-        $entry = DB::transaction(function () use ($entryId) {
+        $entry = DB::transaction(function () use ($entryId, $auto, $actor) {
             $entry = $this->findToday($entryId, lock: true);
 
             if (! in_array($entry->status, [QueueStatus::Waiting, QueueStatus::Called], true)) {
@@ -192,6 +240,7 @@ class QueueService
             }
 
             $this->shiftDown($entry, config('antrian.shift_steps'));
+            $this->recordEvent($entry->fresh(), 'skipped', $actor, ['auto' => $auto]);
 
             return $entry;
         });
@@ -211,9 +260,9 @@ class QueueService
     }
 
     /** Geser nomor ke bawah (mis. pasien pulang dulu karena antrian masih lama). */
-    public function move(int $entryId, int $steps): QueueEntry
+    public function move(int $entryId, int $steps, ?User $actor = null): QueueEntry
     {
-        $entry = DB::transaction(function () use ($entryId, $steps) {
+        $entry = DB::transaction(function () use ($entryId, $steps, $actor) {
             $entry = $this->findToday($entryId, lock: true);
 
             if ($entry->status !== QueueStatus::Waiting) {
@@ -221,6 +270,7 @@ class QueueService
             }
 
             $this->shiftDown($entry, $steps);
+            $this->recordEvent($entry->fresh(), 'moved', $actor, ['steps' => $steps]);
 
             return $entry;
         });
@@ -231,9 +281,9 @@ class QueueService
         return $entry->refresh();
     }
 
-    public function cancel(int $entryId): QueueEntry
+    public function cancel(int $entryId, ?User $actor = null): QueueEntry
     {
-        $entry = DB::transaction(function () use ($entryId) {
+        $entry = DB::transaction(function () use ($entryId, $actor) {
             $entry = $this->findToday($entryId, lock: true);
 
             if (! in_array($entry->status, [QueueStatus::Waiting, QueueStatus::Called], true)) {
@@ -241,6 +291,7 @@ class QueueService
             }
 
             $entry->forceFill(['status' => QueueStatus::Cancelled, 'finished_at' => now()])->save();
+            $this->recordEvent($entry, 'cancelled', $actor);
 
             return $entry;
         });
@@ -390,6 +441,22 @@ class QueueService
             'vibrate' => $sticky ? [300, 150, 300, 150, 600] : [200],
             'url' => '/',
         ]);
+    }
+
+    private function recordEvent(QueueEntry $entry, string $eventType, ?User $actor = null, array $metadata = []): void
+    {
+        $payload = [
+            'queue_entry_id' => $entry->id,
+            'event_type' => $eventType,
+            'metadata' => $metadata ?: null,
+        ];
+
+        if ($actor) {
+            $payload['user_id'] = $actor->id;
+            $payload['actor_role'] = $actor->role instanceof \BackedEnum ? $actor->role->value : (string) $actor->role;
+        }
+
+        QueueEvent::create($payload);
     }
 
     /** Hapus data lama sesuai masa simpan. @return int jumlah antrian terhapus */

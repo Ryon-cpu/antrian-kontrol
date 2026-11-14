@@ -9,4 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('queue:daily-reset')->dailyAt('00:05')->withoutOverlapping();
+Schedule::command('queue:purge-old')->dailyAt('00:10')->withoutOverlapping();
 Schedule::command('queue:process-timeouts')->everyMinute()->withoutOverlapping();

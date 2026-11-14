@@ -28,10 +28,23 @@ class ReportController extends Controller
             ->get([
                 'queue_date',
                 DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN status = 'waiting' THEN 1 ELSE 0 END) as waiting"),
+                DB::raw("SUM(CASE WHEN status = 'called' THEN 1 ELSE 0 END) as called"),
                 DB::raw("SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done"),
                 DB::raw("SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled"),
                 DB::raw("SUM(CASE WHEN status IN ('waiting','called') THEN 1 ELSE 0 END) as unfinished"),
             ]);
+
+        $skippedByDate = DB::table('queue_events')
+            ->join('queue_entries', 'queue_entries.id', '=', 'queue_events.queue_entry_id')
+            ->where('queue_events.event_type', 'skipped')
+            ->whereBetween('queue_entries.queue_date', [$from, $to])
+            ->groupBy('queue_entries.queue_date')
+            ->get([
+                'queue_entries.queue_date',
+                DB::raw('COUNT(DISTINCT queue_events.queue_entry_id) as skipped'),
+            ])
+            ->keyBy('queue_date');
 
         return response()->json([
             'from' => $from,
@@ -39,9 +52,12 @@ class ReportController extends Controller
             'data' => $rows->map(fn ($r) => [
                 'date' => $r->queue_date->toDateString(),
                 'total' => (int) $r->total,
+                'waiting' => (int) $r->waiting,
+                'called' => (int) $r->called,
                 'done' => (int) $r->done,
                 'cancelled' => (int) $r->cancelled,
                 'unfinished' => (int) $r->unfinished,
+                'skipped' => (int) ($skippedByDate[$r->queue_date->toDateString()]->skipped ?? 0),
             ]),
         ]);
     }
