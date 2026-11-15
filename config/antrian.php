@@ -4,6 +4,8 @@ return [
     // Nomor antrian per hari: 01 s.d. max_number, besok mulai lagi dari 01.
     'max_number' => (int) env('QUEUE_MAX_NUMBER', 99),
 
+    'enforce_single_active_queue_per_device' => env('QUEUE_ENFORCE_SINGLE_ACTIVE_PER_DEVICE', true),
+
     // Berapa urutan pasien digeser ke bawah saat "Lewati" / auto-geser.
     'shift_steps' => (int) env('QUEUE_SHIFT_STEPS', 3),
 

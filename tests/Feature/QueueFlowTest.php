@@ -347,6 +347,7 @@ class QueueFlowTest extends TestCase
     public function test_same_device_cannot_register_a_second_active_queue_until_the_first_is_resolved(): void
     {
         $this->openPractice();
+        config(['antrian.enforce_single_active_queue_per_device' => true]);
 
         $token = $this->registerPatient()->assertCreated()->json('device_token');
 
@@ -358,6 +359,20 @@ class QueueFlowTest extends TestCase
 
         $first = QueueEntry::firstOrFail();
         $this->postJson("/api/petugas/queue/{$first->id}/cancel")->assertOk();
+
+        $this->registerPatient($token, 'Pasien Kedua dari Perangkat Sama')
+            ->assertCreated()
+            ->assertJsonPath('entry.number_label', '02');
+
+        $this->assertDatabaseCount('queue_entries', 2);
+    }
+
+    public function test_same_device_can_register_another_active_queue_when_the_guard_is_disabled(): void
+    {
+        $this->openPractice();
+        config(['antrian.enforce_single_active_queue_per_device' => false]);
+
+        $token = $this->registerPatient()->assertCreated()->json('device_token');
 
         $this->registerPatient($token, 'Pasien Kedua dari Perangkat Sama')
             ->assertCreated()
@@ -409,6 +424,7 @@ class QueueFlowTest extends TestCase
     public function test_cancel_frees_device_to_register_again(): void
     {
         $this->openPractice();
+        config(['antrian.enforce_single_active_queue_per_device' => true]);
 
         $token = $this->registerPatient()->assertCreated()->json('device_token');
         $id = QueueEntry::first()->id;
@@ -420,6 +436,8 @@ class QueueFlowTest extends TestCase
     public function test_skipped_patient_remains_visible_and_device_cannot_register_another_active_queue(): void
     {
         $this->openPractice();
+        config(['antrian.enforce_single_active_queue_per_device' => true]);
+
         $token = $this->registerPatient()->assertCreated()->json('device_token');
         $id = QueueEntry::firstOrFail()->id;
 

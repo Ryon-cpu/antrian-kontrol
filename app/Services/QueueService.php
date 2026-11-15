@@ -73,17 +73,19 @@ class QueueService
             try {
                 $entry = $lock->block(5, function () use ($data, $hash) {
                     return DB::transaction(function () use ($data, $hash) {
-                        $existing = QueueEntry::today()
-                            ->where('device_hash', $hash)
-                            ->whereIn('status', QueueStatus::activeValues())
-                            ->lockForUpdate()
-                            ->first();
+                        if (config('antrian.enforce_single_active_queue_per_device')) {
+                            $existing = QueueEntry::today()
+                                ->where('device_hash', $hash)
+                                ->whereIn('status', QueueStatus::activeValues())
+                                ->lockForUpdate()
+                                ->first();
 
-                        if ($existing) {
-                            throw new ApiException(
-                                'Perangkat ini sudah memiliki antrian aktif. Selesaikan atau batalkan antrian sebelumnya sebelum mendaftar baru.',
-                                409
-                            );
+                            if ($existing) {
+                                throw new ApiException(
+                                    'Perangkat ini sudah memiliki antrian aktif. Selesaikan atau batalkan antrian sebelumnya sebelum mendaftar baru.',
+                                    409
+                                );
+                            }
                         }
 
                         $queueDate = today()->toDateString();

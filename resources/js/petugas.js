@@ -241,6 +241,10 @@ export function queueDashboard(config = {}) {
             }
         },
 
+        destroy() {
+            this.stopPolling();
+        },
+
         async handleLogin() {
             this.loginLoading = true;
             this.hideFeedback();
