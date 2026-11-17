@@ -918,7 +918,7 @@ onMounted(() => {
                     </section>
 
             <template v-if="activeView === 'dashboard'">
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6 lg:col-span-2" aria-labelledby="queue-title">
                     <div class="flex flex-col gap-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
                         <div>
