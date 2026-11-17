@@ -46,13 +46,15 @@ class StaffDashboardTest extends TestCase
         $this->actingAs($staff)->get('/petugas')
             ->assertOk()
             ->assertSee('Dashboard petugas')
-            ->assertSee('Antrian hari ini')
+            ->assertSee('id="staff-dashboard-root"', false)
+            ->assertSee('data-dashboard-config=', false)
             ->assertSee('data-auth-mode="token"', false);
 
         $this->actingAs($staff)->get('/dashboard')
             ->assertOk()
             ->assertSee('Dashboard Antrian')
-            ->assertSee('Antrian hari ini')
+            ->assertSee('id="staff-dashboard-root"', false)
+            ->assertSee('data-dashboard-config=', false)
             ->assertSee('data-auth-mode="session"', false)
             ->assertDontSee('Masuk petugas');
     }
@@ -101,6 +103,7 @@ class StaffDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Dashboard Admin')
             ->assertSee('Panel administrasi klinik')
+            ->assertSee('Buka dashboard petugas &amp; riwayat pasien', false)
             ->assertDontSee('Dashboard petugas')
             ->assertDontSee('Panggil berikutnya');
     }

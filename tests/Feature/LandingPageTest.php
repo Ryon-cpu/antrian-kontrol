@@ -12,7 +12,7 @@ class LandingPageTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_landing_page_shows_registration_before_clinic_information(): void
+    public function test_landing_page_provides_registration_and_clinic_information_to_vue(): void
     {
         $this->travelTo(now()->setDate(2026, 11, 11)->setTime(8, 0));
         Setting::updateOrCreate(['key' => 'app_name'], ['value' => 'Klinik Sehat']);
@@ -29,9 +29,10 @@ class LandingPageTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSeeInOrder(['Daftarkan pasien', 'Puskesmas Melati', 'Informasi dokter', 'Prestasi dokter'])
+            ->assertSee('data-queue-registration', false)
+            ->assertSee('data-landing-page', false)
+            ->assertSeeInOrder(['Puskesmas Melati', 'Dr. Sari', 'Sp.PD', 'Dokter teladan'])
             ->assertSee('Klinik Sehat')
-            ->assertSee('Dr. Sari Sp.PD')
             ->assertSee('Dokter teladan')
             ->assertSee('data-practice-open="true"', false);
     }
@@ -45,7 +46,7 @@ class LandingPageTest extends TestCase
             ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false)
             ->assertDontSee('<script>alert(1)</script>', false)
             ->assertSee('data-practice-open="false"', false)
-            ->assertSee('Pendaftaran akan dibuka oleh petugas.');
+            ->assertSee('data-queue-registration', false);
     }
 
     public function test_landing_page_disables_registration_when_daily_queue_is_full(): void
@@ -68,7 +69,7 @@ class LandingPageTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('data-queue-full="true"', false)
-            ->assertSee('Antrian hari ini penuh.');
+            ->assertSee('data-queue-registration', false);
     }
 
     public function test_landing_page_does_not_display_registered_queue_data(): void
@@ -89,8 +90,7 @@ class LandingPageTest extends TestCase
 
         $this->get('/')
             ->assertOk()
-            ->assertSee('id="registration-form"', false)
-            ->assertSee('Nama pasien')
+            ->assertSee('data-queue-registration', false)
             ->assertDontSee('Antrian perangkat ini')
             ->assertDontSee('Sisa antrian di depan')
             ->assertDontSee('Pasien Tersimpan')

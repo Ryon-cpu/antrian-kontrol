@@ -12,6 +12,7 @@ class QueueEntryResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'queue_date' => $this->queue_date?->toDateString(),
             'number' => $this->number,
             'number_label' => $this->number_label,
             'position' => $this->position,

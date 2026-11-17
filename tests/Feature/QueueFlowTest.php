@@ -148,7 +148,8 @@ class QueueFlowTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('data-practice-open="true"', false)
-            ->assertDontSee('id="registration-fields" class="flex flex-col gap-5" disabled', false);
+            ->assertSee('data-queue-full="false"', false)
+            ->assertSee('data-queue-registration', false);
 
         $patients = [
             ['name' => 'Pasien Uji Budi Santoso', 'age' => 45, 'address' => 'Jl. Melati No. 12, Bandung', 'complaint' => 'Batuk sejak tiga hari lalu'],

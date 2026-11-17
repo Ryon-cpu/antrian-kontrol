@@ -1,4 +1,16 @@
+import { createApp } from 'vue';
+import { Toaster, toast } from 'vue-sonner';
+
 const app = document.getElementById('companion-queue-app');
+const toastRoot = document.getElementById('queue-toast-root');
+
+if (toastRoot) {
+    createApp(Toaster, {
+        position: 'top-right',
+        richColors: true,
+        closeButton: true,
+    }).mount(toastRoot);
+}
 
 if (app) {
     const tokenKey = 'antrian_device_token';
@@ -20,10 +32,12 @@ if (app) {
 
     const showFeedback = (message, isError = false) => {
         feedback.textContent = message;
-        feedback.className = 'rounded-md border px-4 py-3 text-base';
-        feedback.classList.add(...(isError
-            ? ['border-red-300', 'bg-red-50', 'text-red-800']
-            : ['border-blue-200', 'bg-blue-50', 'text-blue-900']));
+        if (isError) {
+            toast.error(message);
+            return;
+        }
+
+        toast.success(message);
     };
 
     const statusLabels = {

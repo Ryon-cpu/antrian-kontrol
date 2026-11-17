@@ -53,6 +53,9 @@
         <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700 shadow-sm">
             <p class="font-semibold text-slate-900">Catatan:</p>
             <p class="mt-2">Area operasional antrian tetap berada di panel petugas, sedangkan admin fokus pada pengelolaan pengguna, pengaturan klinik, dan laporan.</p>
+            <a href="{{ route('petugas.dashboard') }}" class="mt-4 inline-flex min-h-10 items-center rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">
+                Buka dashboard petugas &amp; riwayat pasien
+            </a>
         </div>
     </div>
 </x-app-layout>

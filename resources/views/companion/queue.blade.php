@@ -70,7 +70,7 @@
                 <div class="flex flex-col gap-6">
 
                     {{-- Feedback Alert --}}
-                    <div id="queue-feedback" class="hidden rounded-lg border px-4 py-3 text-base shadow-sm" role="status" aria-live="polite"></div>
+                    <div id="queue-feedback" class="sr-only" role="status" aria-live="polite"></div>
 
                     {{-- Kontainer Status Antrian --}}
                     <div id="queue-status" class="flex flex-col gap-6" aria-live="polite">
@@ -288,5 +288,6 @@
                 &copy; {{ date('Y') }} {{ $appName ?? 'Antrian Pasien' }} &bull; Sistem Antrian Klinik Dokter Mandiri
             </footer>
         </div>
+        <div id="queue-toast-root"></div>
     </body>
 </html>

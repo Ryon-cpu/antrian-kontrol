@@ -1,10 +1,4 @@
-import Alpine from 'alpinejs';
-
-if (!window.Alpine) {
-    window.Alpine = Alpine;
-}
-
-export function queueDashboard(config = {}) {
+export function createQueueDashboardState(config = {}) {
     return {
         authMode: config.authMode || 'session',
         staffName: config.staffName || '',
@@ -26,8 +20,6 @@ export function queueDashboard(config = {}) {
         },
         nowServing: config.initialNowServing || '--',
         entries: config.initialEntries || [],
-        statusFilter: 'all',
-        searchQuery: '',
         busy: false,
         soundEnabled: true,
 
@@ -60,9 +52,6 @@ export function queueDashboard(config = {}) {
             message: '',
             isError: false,
         },
-
-        // Polling
-        pollTimer: null,
 
         // Audio Bell Synthesizer (Chime Bell)
         playBell() {
@@ -123,23 +112,6 @@ export function queueDashboard(config = {}) {
             return this.entries.some((e) => e.status === 'waiting' || e.status === 'called');
         },
 
-        get filteredEntries() {
-            let list = this.entries;
-            if (this.statusFilter !== 'all') {
-                list = list.filter((e) => e.status === this.statusFilter);
-            }
-            if (this.searchQuery && this.searchQuery.trim()) {
-                const q = this.searchQuery.toLowerCase().trim();
-                list = list.filter((e) => {
-                    const numberMatch = e.number_label && String(e.number_label).toLowerCase().includes(q);
-                    const nameMatch = e.patient?.name && e.patient.name.toLowerCase().includes(q);
-                    const complaintMatch = e.patient?.complaint && e.patient.complaint.toLowerCase().includes(q);
-                    return numberMatch || nameMatch || complaintMatch;
-                });
-            }
-            return list;
-        },
-
         showFeedback(message, isError = false) {
             this.feedback.message = message;
             this.feedback.isError = isError;
@@ -185,7 +157,6 @@ export function queueDashboard(config = {}) {
             this.isLoggedIn = false;
             this.userRole = '';
             window.sessionStorage.removeItem(this.tokenKey);
-            this.stopPolling();
         },
 
         async loadUserProfile() {
@@ -205,44 +176,6 @@ export function queueDashboard(config = {}) {
                 }
                 return false;
             }
-        },
-
-        async refreshQueue() {
-            if (this.authMode === 'token' && !this.token) {
-                return;
-            }
-
-            try {
-                const data = await this.api('petugas/queue');
-                this.entries = data.data || [];
-                this.nowServing = data.now_serving ?? '--';
-                if (data.practice) {
-                    this.practice = data.practice;
-                }
-                this.hideFeedback();
-            } catch (error) {
-                if (this.isLoggedIn) {
-                    this.showFeedback(error.message, true);
-                }
-            }
-        },
-
-        startPolling() {
-            this.stopPolling();
-            this.pollTimer = setInterval(() => {
-                this.refreshQueue();
-            }, 5000);
-        },
-
-        stopPolling() {
-            if (this.pollTimer) {
-                clearInterval(this.pollTimer);
-                this.pollTimer = null;
-            }
-        },
-
-        destroy() {
-            this.stopPolling();
         },
 
         async handleLogin() {
@@ -280,8 +213,6 @@ export function queueDashboard(config = {}) {
                 this.loginForm.username = '';
                 this.loginForm.password = '';
 
-                await this.refreshQueue();
-                this.startPolling();
                 this.showFeedback(`Selamat datang, ${data.user.name}.`);
             } catch (error) {
                 this.showFeedback(error.message, true);
@@ -484,25 +415,8 @@ export function queueDashboard(config = {}) {
                 }
             } else {
                 this.isLoggedIn = true;
-                this.loadUserProfile();
-            }
-
-            if (this.isLoggedIn) {
-                // If initial entries were not provided, fetch them
-                if (this.entries.length === 0) {
-                    await this.refreshQueue();
-                }
-                this.startPolling();
+                await this.loadUserProfile();
             }
         },
     };
-}
-
-// Register to Alpine
-if (window.Alpine) {
-    window.Alpine.data('queueDashboard', queueDashboard);
-} else {
-    document.addEventListener('alpine:init', () => {
-        window.Alpine.data('queueDashboard', queueDashboard);
-    });
 }

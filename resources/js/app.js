@@ -1,12 +1,12 @@
 
 
 import Alpine from 'alpinejs';
-import { queueDashboard } from './petugas';
+import { mountDashboardVue, unmountDashboardVue } from './vue-dashboard';
 
 window.Alpine = Alpine;
-Alpine.data('queueDashboard', queueDashboard);
 
 Alpine.start();
+mountDashboardVue();
 
 let activeNavigation = null;
 
@@ -39,9 +39,11 @@ async function navigate(url, { pushState = true } = {}) {
             return;
         }
 
+        unmountDashboardVue();
         Alpine.destroyTree(currentShell);
         currentShell.replaceWith(nextShell);
         Alpine.initTree(nextShell);
+        mountDashboardVue();
 
         document.title = nextDocument.title;
 

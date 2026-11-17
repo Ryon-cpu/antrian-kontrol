@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum,web')->group(function () {
         Route::post('practice/close', [PracticeController::class, 'close']);
 
         Route::get('queue', [QueueController::class, 'index']);
+        Route::get('queue/history', [QueueController::class, 'history']);
         Route::post('queue/call', [QueueController::class, 'call']);
         Route::post('queue/{id}/done', [QueueController::class, 'done'])->whereNumber('id');
         Route::post('queue/{id}/skip', [QueueController::class, 'skip'])->whereNumber('id');
