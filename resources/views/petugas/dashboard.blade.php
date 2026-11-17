@@ -19,9 +19,6 @@
                         <a href="{{ route('landing') }}" class="text-sm font-semibold text-gray-600 hover:text-gray-900">← Halaman utama</a>
                         <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">Dashboard petugas</h1>
                     </div>
-                    <button id="logout-button" type="button" class="hidden min-h-12 rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-semibold text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                        Keluar
-                    </button>
                 </div>
             </header>
 

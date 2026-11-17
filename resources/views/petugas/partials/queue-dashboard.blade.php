@@ -17,6 +17,7 @@
     $dashboardConfig = [
         'authMode' => $authMode,
         'staffName' => $staffName ?? '',
+        'profileUrl' => route('profile.edit'),
         'initialEntries' => $initialEntriesData,
         'initialPractice' => $initialPractice,
         'initialNowServing' => $initialNowServing,
@@ -29,3 +30,7 @@
     data-auth-mode="{{ $authMode }}"
     data-dashboard-config="{{ json_encode($dashboardConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
 ></div>
+
+<form id="staff-logout-form" method="POST" action="{{ route('logout') }}" class="hidden">
+    @csrf
+</form>

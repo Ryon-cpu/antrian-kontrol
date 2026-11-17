@@ -56,6 +56,8 @@ class StaffDashboardTest extends TestCase
             ->assertSee('id="staff-dashboard-root"', false)
             ->assertSee('data-dashboard-config=', false)
             ->assertSee('data-auth-mode="session"', false)
+            ->assertDontSee('Profile')
+            ->assertDontSee('Log Out')
             ->assertDontSee('Masuk petugas');
     }
 
@@ -104,6 +106,8 @@ class StaffDashboardTest extends TestCase
             ->assertSee('Dashboard Admin')
             ->assertSee('Panel administrasi klinik')
             ->assertSee('Buka dashboard petugas &amp; riwayat pasien', false)
+            ->assertSee('Profile')
+            ->assertSee('Log Out')
             ->assertDontSee('Dashboard petugas')
             ->assertDontSee('Panggil berikutnya');
     }

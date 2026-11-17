@@ -1,4 +1,8 @@
 <x-guest-layout>
+    <div class="mb-4">
+        <x-back-button />
+    </div>
+
     <form method="POST" action="{{ route('password.store') }}">
         @csrf
 

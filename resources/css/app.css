@@ -3,3 +3,153 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+#staff-app [class~="gap-1.5"] {
+    gap: calc(0.375rem - 1px);
+}
+
+#staff-app [class~="gap-1"] {
+    gap: calc(0.25rem - 1px);
+}
+
+#staff-app [class~="gap-2"] {
+    gap: calc(0.5rem - 1px);
+}
+
+#staff-app [class~="gap-3"] {
+    gap: calc(0.75rem - 1px);
+}
+
+#staff-app [class~="gap-4"] {
+    gap: calc(1rem - 1px);
+}
+
+#staff-app [class~="gap-5"] {
+    gap: calc(1.25rem - 1px);
+}
+
+#staff-app [class~="gap-6"] {
+    gap: calc(1.5rem - 1px);
+}
+
+#staff-app [class~="p-3"] {
+    padding: calc(0.75rem - 1px);
+}
+
+#staff-app [class~="p-4"] {
+    padding: calc(1rem - 1px);
+}
+
+#staff-app [class~="p-5"] {
+    padding: calc(1.25rem - 1px);
+}
+
+#staff-app [class~="p-6"] {
+    padding: calc(1.5rem - 1px);
+}
+
+#staff-app [class~="pb-3"] {
+    padding-bottom: calc(0.75rem - 1px);
+}
+
+#staff-app [class~="pb-5"] {
+    padding-bottom: calc(1.25rem - 1px);
+}
+
+#staff-app [class~="pt-3"] {
+    padding-top: calc(0.75rem - 1px);
+}
+
+#staff-app [class~="pt-4"] {
+    padding-top: calc(1rem - 1px);
+}
+
+#staff-app [class~="px-2.5"] {
+    padding-left: calc(0.625rem - 1px);
+    padding-right: calc(0.625rem - 1px);
+}
+
+#staff-app [class~="px-2"] {
+    padding-left: calc(0.5rem - 1px);
+    padding-right: calc(0.5rem - 1px);
+}
+
+#staff-app [class~="px-3"] {
+    padding-left: calc(0.75rem - 1px);
+    padding-right: calc(0.75rem - 1px);
+}
+
+#staff-app [class~="px-3.5"] {
+    padding-left: calc(0.875rem - 1px);
+    padding-right: calc(0.875rem - 1px);
+}
+
+#staff-app [class~="px-4"] {
+    padding-left: calc(1rem - 1px);
+    padding-right: calc(1rem - 1px);
+}
+
+#staff-app [class~="px-5"] {
+    padding-left: calc(1.25rem - 1px);
+    padding-right: calc(1.25rem - 1px);
+}
+
+#staff-app [class~="px-6"] {
+    padding-left: calc(1.5rem - 1px);
+    padding-right: calc(1.5rem - 1px);
+}
+
+#staff-app [class~="py-1"] {
+    padding-top: calc(0.25rem - 1px);
+    padding-bottom: calc(0.25rem - 1px);
+}
+
+#staff-app [class~="py-1.5"] {
+    padding-top: calc(0.375rem - 1px);
+    padding-bottom: calc(0.375rem - 1px);
+}
+
+#staff-app [class~="py-2"] {
+    padding-top: calc(0.5rem - 1px);
+    padding-bottom: calc(0.5rem - 1px);
+}
+
+#staff-app [class~="py-2.5"] {
+    padding-top: calc(0.625rem - 1px);
+    padding-bottom: calc(0.625rem - 1px);
+}
+
+#staff-app [class~="py-3"] {
+    padding-top: calc(0.75rem - 1px);
+    padding-bottom: calc(0.75rem - 1px);
+}
+
+#staff-app [class~="py-10"] {
+    padding-top: calc(2.5rem - 1px);
+    padding-bottom: calc(2.5rem - 1px);
+}
+
+#staff-app [class~="py-12"] {
+    padding-top: calc(3rem - 1px);
+    padding-bottom: calc(3rem - 1px);
+}
+
+@media (min-width: 640px) {
+    #staff-app [class~="sm:p-6"] {
+        padding: calc(1.5rem - 1px);
+    }
+
+    #staff-app [class~="sm:p-8"] {
+        padding: calc(2rem - 1px);
+    }
+}
+
+@media (min-width: 1024px) {
+    #staff-app [class~="lg:p-6"] {
+        padding: calc(1.5rem - 1px);
+    }
+}
+
+#staff-app .staff-mobile-nav {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+}
