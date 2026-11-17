@@ -450,6 +450,30 @@ async function exportHistory(format) {
     }
 }
 
+async function logoutFromSidebar() {
+    if (dashboard.authMode === 'token') {
+        await dashboard.handleLogout();
+        return;
+    }
+
+    const logoutForm = document.getElementById('staff-logout-form');
+    if (!(logoutForm instanceof HTMLFormElement)) {
+        dashboard.showFeedback('Form keluar tidak tersedia.', true);
+        return;
+    }
+
+    logoutForm.submit();
+}
+
+function goBack() {
+    if (activeView.value === 'history') {
+        activeView.value = 'dashboard';
+        return;
+    }
+
+    window.history.back();
+}
+
 onMounted(() => {
     dashboard.init();
 });
@@ -465,6 +489,18 @@ onMounted(() => {
             class="mx-auto w-full max-w-lg rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8"
         >
             <div class="flex items-center gap-3">
+                <button
+                    type="button"
+                    aria-label="Kembali Kehalaman Sebelumnya"
+                    title="Kembali Kehalaman Sebelumnya"
+                    class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    @click="goBack()"
+                >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span>Kembali Kehalaman Sebelumnya</span>
+                </button>
                 <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
                     <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -517,9 +553,9 @@ onMounted(() => {
         <section
             v-if="dashboard.authMode === 'session' || dashboard.isLoggedIn"
             id="dashboard-panel"
-            class="grid items-start gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]"
+            class="grid items-start gap-6 pb-24 lg:grid-cols-[15rem_minmax(0,1fr)] lg:pb-0"
         >
-            <aside class="rounded-xl border border-gray-200 bg-white p-3 shadow-sm lg:sticky lg:top-6">
+            <aside class="hidden rounded-xl border border-gray-200 bg-white p-3 shadow-sm lg:sticky lg:top-6 lg:block">
                 <p class="hidden px-3 py-2 text-xs font-bold uppercase tracking-wider text-gray-500 lg:block">Menu utama</p>
                 <nav class="flex gap-2 overflow-x-auto lg:flex-col" aria-label="Navigasi dashboard">
                     <button
@@ -549,72 +585,102 @@ onMounted(() => {
                         Riwayat pasien
                     </button>
                 </nav>
+                <div class="mt-3 flex gap-2 border-t border-gray-200 pt-3 lg:flex-col">
+                    <a
+                        id="staff-nav-profile"
+                        :href="props.config.profileUrl"
+                        class="flex min-h-11 shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    >
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A9 9 0 1118.88 17.8M15 9a3 3 0 11-6 0 3 3 0 016 0zm-3 12a8.96 8.96 0 005.879-2.196A6 6 0 006.12 18.8 8.96 8.96 0 0012 21z" />
+                        </svg>
+                        Profile
+                    </a>
+                    <button
+                        id="staff-nav-logout"
+                        type="button"
+                        class="flex min-h-11 shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-gray-600 hover:bg-red-50 hover:text-red-700"
+                        @click="logoutFromSidebar()"
+                    >
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Log Out
+                    </button>
+                </div>
             </aside>
 
-            <div class="flex min-w-0 flex-col gap-6">
-                <div class="flex flex-col gap-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between lg:p-6">
+            <div class="flex min-w-0 flex-col gap-4">
                 <div class="flex flex-col gap-2">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-gray-800">
-                            Klinik Dokter Mandiri
-                        </span>
-                        <span class="text-sm font-medium text-gray-600">
-                            Petugas: <strong id="staff-name" class="text-gray-900">{{ dashboard.staffDisplay }}</strong>
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="h-3.5 w-3.5 rounded-full transition-colors"
-                            :class="dashboard.practice.is_open ? 'bg-green-500 ring-4 ring-green-100 animate-pulse' : 'bg-gray-400'"
-                        ></span>
-                        <p
-                            id="practice-status"
-                            class="text-lg font-bold"
-                            :class="dashboard.practice.is_open ? 'text-green-800' : 'text-gray-700'"
-                        >
-                            {{ dashboard.practice.message }}
-                        </p>
-                    </div>
-                </div>
+                    <button
+                        v-if="activeView === 'history'"
+                        id="history-back-button"
+                        type="button"
+                        aria-label="Kembali Kehalaman Sebelumnya"
+                        title="Kembali Kehalaman Sebelumnya"
+                        class="inline-flex items-center gap-2 self-start rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        @click="goBack()"
+                    >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <span>Kembali Kehalaman Sebelumnya</span>
+                    </button>
+                    <div class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between lg:p-6">
+                        <div class="flex flex-col gap-2">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-gray-800">
+                                    Klinik Dokter Mandiri
+                                </span>
+                                <span class="text-sm font-medium text-gray-600">
+                                    Petugas: <strong id="staff-name" class="text-gray-900">{{ dashboard.staffDisplay }}</strong>
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="h-3.5 w-3.5 rounded-full transition-colors"
+                                    :class="dashboard.practice.is_open ? 'bg-green-500 ring-4 ring-green-100 animate-pulse' : 'bg-gray-400'"
+                                ></span>
+                                <p
+                                    id="practice-status"
+                                    class="text-lg font-bold"
+                                    :class="dashboard.practice.is_open ? 'text-green-800' : 'text-gray-700'"
+                                >
+                                    {{ dashboard.practice.message }}
+                                </p>
+                            </div>
+                        </div>
 
-                <div class="flex flex-wrap items-center gap-3">
-                    <button
-                        type="button"
-                        class="inline-flex min-h-12 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        :title="dashboard.soundEnabled ? 'Matikan nada bel panggilan' : 'Nyalakan nada bel panggilan'"
-                        @click="dashboard.soundEnabled = !dashboard.soundEnabled; if (dashboard.soundEnabled) dashboard.playBell()"
-                    >
-                        <span>{{ dashboard.soundEnabled ? 'Bel Aktif' : 'Bel Senyap' }}</span>
-                    </button>
-                    <button
-                        id="practice-button"
-                        type="button"
-                        :disabled="dashboard.busy || dashboard.practice.state === 'libur'"
-                        class="min-h-12 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-base font-bold text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-                        @click="dashboard.togglePractice()"
-                    >
-                        {{ dashboard.practice.is_open ? 'Tutup praktek' : 'Buka praktek' }}
-                    </button>
-                    <button
-                        id="call-button"
-                        type="button"
-                        :disabled="!dashboard.canCallNext"
-                        class="flex min-h-12 items-center gap-2 rounded-lg bg-blue-700 px-6 py-2.5 text-base font-bold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-400"
-                        @click="dashboard.callNext()"
-                    >
-                        Panggil berikutnya
-                    </button>
-                    <button
-                        v-if="dashboard.authMode === 'token'"
-                        id="logout-button"
-                        type="button"
-                        class="min-h-12 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-base font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
-                        @click="dashboard.handleLogout()"
-                    >
-                        Keluar
-                    </button>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button
+                                type="button"
+                                class="inline-flex min-h-12 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                :title="dashboard.soundEnabled ? 'Matikan nada bel panggilan' : 'Nyalakan nada bel panggilan'"
+                                @click="dashboard.soundEnabled = !dashboard.soundEnabled; if (dashboard.soundEnabled) dashboard.playBell()"
+                            >
+                                <span>{{ dashboard.soundEnabled ? 'Bel Aktif' : 'Bel Senyap' }}</span>
+                            </button>
+                            <button
+                                id="practice-button"
+                                type="button"
+                                :disabled="dashboard.busy || dashboard.practice.state === 'libur'"
+                                class="min-h-12 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-base font-bold text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                                @click="dashboard.togglePractice()"
+                            >
+                                {{ dashboard.practice.is_open ? 'Tutup praktek' : 'Buka praktek' }}
+                            </button>
+                            <button
+                                id="call-button"
+                                type="button"
+                                :disabled="!dashboard.canCallNext"
+                                class="flex min-h-12 items-center gap-2 rounded-lg bg-blue-700 px-6 py-2.5 text-base font-bold text-white shadow-sm hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+                                @click="dashboard.callNext()"
+                            >
+                                Panggil berikutnya
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
             <template v-if="activeView === 'dashboard'">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -656,6 +722,7 @@ onMounted(() => {
                         <button class="min-h-10 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-700 disabled:opacity-50" :disabled="dashboard.busy" @click="dashboard.cancelEntry(dashboard.activeEntry)">Batalkan</button>
                     </div>
                 </div>
+
             </section>
                 </template>
 
@@ -783,7 +850,7 @@ onMounted(() => {
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 <tr v-for="row in historyTable.getRowModel().rows" :key="row.id">
-                                    <td v-for="cell in row.getVisibleCells()" :key="cell.id" class="px-3 py-3 align-top">
+                                    <td v-for="cell in row.getAllCells()" :key="cell.id" class="px-3 py-3 align-top">
                                         <span v-if="cell.column.id === 'queue_date'" class="whitespace-nowrap font-medium text-gray-700">
                                             {{ formatDate(row.original.queue_date) }}
                                         </span>
@@ -858,19 +925,19 @@ onMounted(() => {
                             <h2 id="queue-title" class="text-xl font-bold text-gray-900 sm:text-2xl">Antrian hari ini</h2>
                             <p class="mt-1 text-sm text-gray-500">Daftar antrean dan tindakan pelayanan pasien klinik.</p>
                         </div>
-                        <div class="flex flex-wrap gap-3">
+                        <div class="flex w-full flex-nowrap gap-2 lg:w-auto lg:gap-3">
                             <input
                                 v-model="searchQuery"
                                 type="search"
                                 aria-label="Cari pasien atau nomor antrean"
                                 placeholder="Cari pasien / no antrian..."
-                                class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                class="min-h-10 min-w-0 flex-1 rounded-lg border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500 lg:w-40 lg:flex-none"
                             >
                             <select
                                 id="status-filter"
                                 v-model="statusFilter"
                                 aria-label="Filter status antrean"
-                                class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                class="min-h-10 min-w-0 flex-1 rounded-lg border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500 lg:w-32 lg:flex-none"
                             >
                                 <option value="all">Semua antrian</option>
                                 <option value="waiting">Menunggu</option>
@@ -902,7 +969,7 @@ onMounted(() => {
                             <tbody class="divide-y divide-gray-100">
                                 <tr v-for="row in table.getRowModel().rows" :key="row.id">
                                     <td
-                                        v-for="cell in row.getVisibleCells()"
+                                        v-for="cell in row.getAllCells()"
                                         :key="cell.id"
                                         class="px-3 py-3"
                                     >
@@ -1021,6 +1088,50 @@ onMounted(() => {
             </div>
             </template>
             </div>
+            <nav
+                class="staff-mobile-nav fixed bottom-2 left-1/2 z-40 flex w-48 -translate-x-1/2 flex-row items-center justify-center gap-2 rounded-full border border-gray-100 bg-white/95 px-2 py-1 shadow-md backdrop-blur lg:hidden"
+                aria-label="Navigasi utama"
+            >
+                <button
+                    id="staff-mobile-nav-dashboard"
+                    type="button"
+                    aria-label="Dashboard"
+                    title="Dashboard"
+                    class="flex h-10 w-10 items-center justify-center rounded-full transition-colors"
+                    :class="activeView === 'dashboard' ? 'bg-red-50 text-red-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'"
+                    :aria-current="activeView === 'dashboard' ? 'page' : undefined"
+                    @click="activeView = 'dashboard'"
+                >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                    </svg>
+                </button>
+                <button
+                    id="staff-mobile-nav-history"
+                    type="button"
+                    aria-label="Riwayat pasien"
+                    title="Riwayat pasien"
+                    class="flex h-10 w-10 items-center justify-center rounded-full transition-colors"
+                    :class="activeView === 'history' ? 'bg-red-50 text-red-700' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'"
+                    :aria-current="activeView === 'history' ? 'page' : undefined"
+                    @click="activeView = 'history'"
+                >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
+                <a
+                    id="staff-mobile-nav-profile"
+                    :href="props.config.profileUrl"
+                    aria-label="Profile"
+                    title="Profile"
+                    class="flex h-10 w-10 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-800"
+                >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A9 9 0 1118.88 17.8M15 9a3 3 0 11-6 0 3 3 0 016 0zm-3 12a8.96 8.96 0 005.879-2.196A6 6 0 006.12 18.8 8.96 8.96 0 0012 21z" />
+                    </svg>
+                </a>
+            </nav>
         </section>
 
         <div
