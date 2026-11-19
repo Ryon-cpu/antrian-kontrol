@@ -486,16 +486,14 @@ onMounted(() => {
         <section
             v-if="dashboard.authMode === 'token' && !dashboard.isLoggedIn"
             id="login-panel"
-            class="mx-auto w-full max-w-lg rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8"
-        >
+            class="mx-auto w-full max-w-lg rounded-xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
             <div class="flex items-center gap-3">
                 <button
                     type="button"
                     aria-label="Kembali Kehalaman Sebelumnya"
                     title="Kembali Kehalaman Sebelumnya"
                     class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    @click="goBack()"
-                >
+                    @click="goBack()">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
@@ -772,15 +770,13 @@ onMounted(() => {
                                 :min="historyAvailableFrom"
                                 :max="historyAvailableTo"
                                 class="min-h-10 rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                @change="adjustHistoryDateRange('to')"
-                            >
+                                @change="adjustHistoryDateRange('to')">
                         </label>
                         <label class="flex flex-col gap-1.5 text-xs font-semibold text-gray-600">
                             Status
                             <select
                                 v-model="historyFilters.status"
-                                class="min-h-10 rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            >
+                                class="min-h-10 rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="all">Semua status</option>
                                 <option value="waiting">Menunggu</option>
                                 <option value="called">Dipanggil</option>
@@ -795,8 +791,7 @@ onMounted(() => {
                                 type="search"
                                 maxlength="100"
                                 placeholder="Nama, alamat, keluhan..."
-                                class="min-h-10 rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            >
+                                class="min-h-10 rounded-lg border-gray-300 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </label>
                         <div class="flex items-end gap-2 sm:col-span-2 xl:col-span-1">
                             <button type="submit" class="min-h-10 flex-1 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800">
@@ -805,8 +800,7 @@ onMounted(() => {
                             <button
                                 type="button"
                                 class="min-h-10 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                                @click="resetHistoryFilters()"
-                            >
+                                @click="resetHistoryFilters()">
                                 Reset
                             </button>
                         </div>
@@ -818,8 +812,7 @@ onMounted(() => {
                             Baris per halaman
                             <select
                                 v-model.number="historyFilters.perPage"
-                                class="rounded-md border-gray-300 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            >
+                                class="rounded-md border-gray-300 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option :value="10">10</option>
                                 <option :value="20">20</option>
                                 <option :value="50">50</option>
@@ -837,8 +830,7 @@ onMounted(() => {
                                             v-if="header.column.getCanSort()"
                                             type="button"
                                             class="inline-flex items-center gap-1.5 hover:text-gray-900"
-                                            @click="header.column.getToggleSortingHandler()?.($event)"
-                                        >
+                                            @click="header.column.getToggleSortingHandler()?.($event)">
                                             <FlexRender :header="header" />
                                             <span aria-hidden="true">
                                                 {{ { asc: '↑', desc: '↓' }[header.column.getIsSorted()] || '↕' }}
@@ -901,16 +893,14 @@ onMounted(() => {
                                 type="button"
                                 class="rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 :disabled="historyMeta.current_page <= 1 || historyIsFetching"
-                                @click="changeHistoryPage(historyMeta.current_page - 1)"
-                            >
+                                @click="changeHistoryPage(historyMeta.current_page - 1)">
                                 Sebelumnya
                             </button>
                             <button
                                 type="button"
                                 class="rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 :disabled="historyMeta.current_page >= historyMeta.last_page || historyIsFetching"
-                                @click="changeHistoryPage(historyMeta.current_page + 1)"
-                            >
+                                @click="changeHistoryPage(historyMeta.current_page + 1)">
                                 Berikutnya
                             </button>
                         </div>
